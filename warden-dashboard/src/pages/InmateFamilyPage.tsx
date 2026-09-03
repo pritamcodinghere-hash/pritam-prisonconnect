@@ -44,8 +44,9 @@ export function InmateFamilyPage() {
   const familyOfSelected = selectedId ? contacts.filter(c=>c.inmateId===selectedId) : [];
   return (
     <div className="space-y-6">
-      <div><h1 className="text-3xl font-bold">Prisoner & Family</h1><p className="text-neutral-600">Prisoner pe click karo - niche uski Family dikhegi</p></div>
+      <div><h1 className="text-3xl font-bold">Prisoner & Family</h1><p className="text-neutral-600">Side by side - Prisoner pe click karo, bagal me uski Family dikhegi</p></div>
 
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Block 1 - All Prisoners - click to select */}
       <Card>
         <div className="flex justify-between items-center mb-4">
@@ -86,7 +87,7 @@ export function InmateFamilyPage() {
         )}
       </Card>
 
-      {/* Block 2 - Family of Selected Prisoner */}
+      {/* Block 2 - Family of Selected Prisoner - side by side */}
       <Card>
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-bold flex items-center gap-2"><span className="w-8 h-8 rounded-lg bg-success/10 flex items-center justify-center">👨‍👩‍👧</span> {selected ? `Family of ${selected.firstName} ${selected.lastName} (${familyOfSelected.length})` : 'Family Members - Select a prisoner above'}</h2>
@@ -119,12 +120,12 @@ export function InmateFamilyPage() {
             <div className="bg-white rounded-xl p-6 w-full max-w-md" onClick={e=>e.stopPropagation()}>
               <h3 className="font-bold mb-4">Add Family Member</h3>
               <input placeholder="Full Name" value={newFamily.fullName} onChange={e=>setNewFamily({...newFamily,fullName:e.target.value})} className="w-full mb-3 px-3 py-2 border rounded-lg" />
-                <input placeholder="Relationship" value={newFamily.relationship} onChange={e=>setNewFamily({...newFamily,relationship:e.target.value})} className="w-full mb-3 px-3 py-2 border rounded-lg" />
-                <input placeholder="Phone" value={newFamily.phoneNumber} onChange={e=>setNewFamily({...newFamily,phoneNumber:e.target.value})} className="w-full mb-3 px-3 py-2 border rounded-lg" />
-                <select value={newFamily.inmateId} onChange={e=>setNewFamily({...newFamily,inmateId:e.target.value})} className="w-full mb-3 px-3 py-2 border rounded-lg">
-                  <option value="">{selectedId ? `Family for ${selected?.firstName} (${selectedId})` : 'Select Inmate'}</option>
-                  {inmates.map(i=><option key={i.inmateId} value={i.inmateId}>{i.firstName} {i.lastName} ({i.inmateId})</option>)}
-                </select>
+              <input placeholder="Relationship" value={newFamily.relationship} onChange={e=>setNewFamily({...newFamily,relationship:e.target.value})} className="w-full mb-3 px-3 py-2 border rounded-lg" />
+              <input placeholder="Phone" value={newFamily.phoneNumber} onChange={e=>setNewFamily({...newFamily,phoneNumber:e.target.value})} className="w-full mb-3 px-3 py-2 border rounded-lg" />
+              <select value={newFamily.inmateId} onChange={e=>setNewFamily({...newFamily,inmateId:e.target.value})} className="w-full mb-3 px-3 py-2 border rounded-lg">
+                <option value="">{selectedId ? `Family for ${selected?.firstName} (${selectedId})` : 'Select Inmate'}</option>
+                {inmates.map(i=><option key={i.inmateId} value={i.inmateId}>{i.firstName} {i.lastName} ({i.inmateId})</option>)}
+              </select>
               <div className="flex gap-2 justify-end">
                 <button onClick={()=>setShowAddFamily(false)} className="px-4 py-2 border rounded-lg">Cancel</button>
                 <button onClick={addFamily} className="px-4 py-2 bg-primary-600 text-white rounded-lg">Add</button>
@@ -133,6 +134,7 @@ export function InmateFamilyPage() {
           </div>
         )}
       </Card>
+      </div>
     </div>
   );
 }
