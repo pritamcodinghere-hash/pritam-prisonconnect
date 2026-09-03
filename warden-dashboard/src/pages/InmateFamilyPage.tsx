@@ -99,7 +99,7 @@ export function InmateFamilyPage() {
           <button onClick={()=>setShowAddFamily(true)} disabled={!selectedId} className={`px-4 py-2 rounded-lg text-sm shadow-sm ${selectedId?'bg-success text-white hover:bg-success-700':'bg-neutral-300 text-neutral-500 cursor-not-allowed'}`}>+ Add Family</button>
         </div>
         {!selectedId ? (
-          <div className="text-center py-12 border-2 border-dashed border-neutral-200 rounded-xl"><p className="text-neutral-500">Prisoner table me kisi row pe click karo</p><p className="text-xs text-neutral-400 mt-1">uski family yaha side-by-side dikhegi</p></div>
+          <div className="text-center py-12 border-2 border-dashed border-neutral-200 rounded-xl"><p className="text-neutral-700 font-medium">Click any prisoner row to view family members here</p><p className="text-xs text-neutral-600 mt-1">Family details will appear side by side</p></div>
         ) : (
         <>
         <input value={searchFamily} onChange={e=>setSearchFamily(e.target.value)} placeholder="Search family..." className="w-full mb-3 px-3 py-2 border-2 border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-success text-sm" />
