@@ -23,6 +23,9 @@ export function CallHistoryPage() {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [page, setPage] = useState(1);
+  const [selected, setSelected] = useState<CallHistoryItem | null>(null);
+  const [sortField, setSortField] = useState<'date'|'duration'>('date');
+  const [sortDir, setSortDir] = useState<'asc'|'desc'>('desc');
   const pageSize = 5;
 
   const dummyCalls: CallHistoryItem[] = [
@@ -121,9 +124,15 @@ export function CallHistoryPage() {
     const matchFrom = !dateFrom || d >= dateFrom;
     const matchTo = !dateTo || d <= dateTo;
     return matchSearch && matchStatus && matchType && matchKiosk && matchFrom && matchTo;
+  }).sort((a,b)=>{
+    if(sortField==='date') return sortDir==='asc' ? new Date(a.startTime).getTime()-new Date(b.startTime).getTime() : new Date(b.startTime).getTime()-new Date(a.startTime).getTime();
+    return sortDir==='asc' ? a.durationMinutes-b.durationMinutes : b.durationMinutes-a.durationMinutes;
   });
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const paged = filtered.slice((page-1)*pageSize, page*pageSize);
+  const toggleSort = (f: 'date'|'duration') => {
+    if(sortField===f) setSortDir(d=> d==='asc'?'desc':'asc'); else {setSortField(f); setSortDir('desc');}
+  };
 
   const exportCSV = () => {
     const rows = [['Call ID','Date','Inmate','Contact','Kiosk','Type','Duration','Status','Recording']];
@@ -173,12 +182,12 @@ export function CallHistoryPage() {
               <thead>
                 <tr className="border-b border-neutral-200">
                   <th className="text-left py-3 px-4 text-sm font-semibold text-neutral-900">Call ID</th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-neutral-900">Date</th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-neutral-900 cursor-pointer select-none" onClick={()=>toggleSort('date')}>Date {sortField==='date'?(sortDir==='asc'?'↑':'↓'):''}</th>
                   <th className="text-left py-3 px-4 text-sm font-semibold text-neutral-900">Inmate</th>
                   <th className="text-left py-3 px-4 text-sm font-semibold text-neutral-900">Contact</th>
                   <th className="text-left py-3 px-4 text-sm font-semibold text-neutral-900">Kiosk</th>
                   <th className="text-left py-3 px-4 text-sm font-semibold text-neutral-900">Type</th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-neutral-900">Duration</th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-neutral-900 cursor-pointer select-none" onClick={()=>toggleSort('duration')}>Duration {sortField==='duration'?(sortDir==='asc'?'↑':'↓'):''}</th>
                   <th className="text-left py-3 px-4 text-sm font-semibold text-neutral-900">Status</th>
                   <th className="text-left py-3 px-4 text-sm font-semibold text-neutral-900">Recording</th>
                 </tr>
@@ -187,7 +196,7 @@ export function CallHistoryPage() {
                 {paged.map((call) => {
                   const rec = recordings[call.callId];
                   return (
-                  <tr key={call.callId} className="border-b border-neutral-100 hover:bg-neutral-50">
+                  <tr key={call.callId} onClick={()=>setSelected(call)} className="border-b border-neutral-100 hover:bg-neutral-50 cursor-pointer">
                     <td className="py-3 px-4 text-sm text-neutral-900 font-mono text-xs">{call.callId}</td>
                     <td className="py-3 px-4 text-sm text-neutral-900">{formatDate(call.startTime)}</td>
                     <td className="py-3 px-4">
@@ -210,7 +219,7 @@ export function CallHistoryPage() {
                         {call.status}
                       </span>
                     </td>
-                    <td className="py-3 px-4">
+                    <td className="py-3 px-4" onClick={e=>e.stopPropagation()}>
                       {rec?.url ? (
                         <div className="flex gap-2">
                           <button onClick={() => setPlaying(rec)} className="px-3 py-1 bg-primary-600 text-white rounded-md text-xs hover:bg-primary-700">▶ Play</button>
@@ -247,6 +256,37 @@ export function CallHistoryPage() {
               <video controls autoPlay src={playing.url || ''} className="w-full rounded-lg bg-black" style={{maxHeight:'60vh'}} />
             )}
             <p className="text-xs text-neutral-500 mt-2">Inmate {playing.inmateId} • {formatDuration((playing.duration||0)/60)}</p>
+          </div>
+        </div>
+      )}
+      {selected && (
+        <div className="fixed inset-0 bg-black/60 flex justify-end z-50" onClick={()=>setSelected(null)}>
+          <div className="bg-white w-full max-w-md h-full overflow-auto p-6" onClick={e=>e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold">Call Details</h3>
+              <button onClick={()=>setSelected(null)} className="text-neutral-500">✕</button>
+            </div>
+            <div className="flex items-center gap-3 mb-4">
+              <img src={inmates[selected.inmateId]?.photoUrl || 'https://i.pravatar.cc/100'} alt="" className="w-12 h-12 rounded-full" />
+              <div>
+                <p className="font-medium">{inmates[selected.inmateId] ? `${inmates[selected.inmateId].firstName} ${inmates[selected.inmateId].lastName}` : selected.inmateId}</p>
+                <p className="text-xs text-neutral-500">{selected.inmateId} • {inmates[selected.inmateId]?.cellBlock || ''}</p>
+              </div>
+            </div>
+            <div className="space-y-3 text-sm">
+              <p><b>Call ID:</b> {selected.callId}</p>
+              <p><b>Date:</b> {formatDate(selected.startTime)}</p>
+              <p><b>Kiosk:</b> {selected.kioskId}</p>
+              <p><b>Type:</b> {selected.type} • <b>Duration:</b> {formatDuration(selected.durationMinutes)} • <b>Status:</b> {selected.status}</p>
+              <p><b>Contact:</b> {selected.contactId}</p>
+            </div>
+            {recordings[selected.callId]?.url && (
+              <div className="mt-4">
+                <p className="text-sm font-semibold mb-2">Recording</p>
+                <video controls src={recordings[selected.callId].url!} className="w-full rounded-lg bg-black" />
+                <a href={recordings[selected.callId].url!} download className="mt-2 inline-block px-4 py-2 bg-primary-600 text-white rounded text-sm">⬇ Download Recording</a>
+              </div>
+            )}
           </div>
         </div>
       )}
