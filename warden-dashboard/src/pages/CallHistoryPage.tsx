@@ -18,6 +18,11 @@ export function CallHistoryPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
+  const [kioskFilter, setKioskFilter] = useState('all');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [page, setPage] = useState(1);
+  const pageSize = 5;
 
   const dummyCalls: CallHistoryItem[] = [
     { callId: 'CALL-20240801-001', roomId: 'ROOM-01', inmateId: 'INM-1021', contactId: 'FAM-201', kioskId: 'KIOSK-01', type: 'video', status: 'completed', startTime: new Date(Date.now()-86400000).toISOString(), endTime: new Date(Date.now()-86400000+12*60000).toISOString(), durationMinutes: 12 },
@@ -88,13 +93,23 @@ export function CallHistoryPage() {
     });
   };
 
+  const kiosks = Array.from(new Set(calls.map(c=>c.kioskId)));
+  const avgDuration = calls.length ? (calls.reduce((a,c)=>a+c.durationMinutes,0)/calls.length).toFixed(1) : '0';
+  const withRec = Object.keys(recordings).length;
+
   const filtered = calls.filter(c => {
     const s = search.toLowerCase();
     const matchSearch = !s || c.callId.toLowerCase().includes(s) || c.inmateId.toLowerCase().includes(s) || c.contactId.toLowerCase().includes(s) || c.kioskId.toLowerCase().includes(s);
     const matchStatus = statusFilter==='all' || c.status===statusFilter;
     const matchType = typeFilter==='all' || c.type===typeFilter;
-    return matchSearch && matchStatus && matchType;
+    const matchKiosk = kioskFilter==='all' || c.kioskId===kioskFilter;
+    const d = new Date(c.startTime).toISOString().slice(0,10);
+    const matchFrom = !dateFrom || d >= dateFrom;
+    const matchTo = !dateTo || d <= dateTo;
+    return matchSearch && matchStatus && matchType && matchKiosk && matchFrom && matchTo;
   });
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const paged = filtered.slice((page-1)*pageSize, page*pageSize);
 
   const exportCSV = () => {
     const rows = [['Call ID','Date','Inmate','Contact','Kiosk','Type','Duration','Status','Recording']];
@@ -117,11 +132,22 @@ export function CallHistoryPage() {
         <button onClick={exportCSV} className="px-4 py-2 bg-success text-white rounded-lg text-sm font-medium hover:bg-success-700">⬇ Export CSV</button>
       </div>
 
+      <div className="grid grid-cols-3 gap-4">
+        <Card><div className="p-4 text-center"><p className="text-2xl font-bold">{calls.length}</p><p className="text-xs text-neutral-500">Total Calls</p></div></Card>
+        <Card><div className="p-4 text-center"><p className="text-2xl font-bold">{avgDuration}m</p><p className="text-xs text-neutral-500">Avg Duration</p></div></Card>
+        <Card><div className="p-4 text-center"><p className="text-2xl font-bold">{withRec}</p><p className="text-xs text-neutral-500">With Recording</p></div></Card>
+      </div>
+
       <Card>
-        <div className="flex flex-col md:flex-row gap-3 mb-4">
-          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search Call ID / Inmate / Contact / Kiosk" className="flex-1 px-4 py-2 border-2 border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
-          <select value={statusFilter} onChange={e=>setStatusFilter(e.target.value)} className="px-4 py-2 border-2 border-neutral-300 rounded-lg"><option value="all">All Status</option><option value="completed">Completed</option><option value="failed">Failed</option></select>
-          <select value={typeFilter} onChange={e=>setTypeFilter(e.target.value)} className="px-4 py-2 border-2 border-neutral-300 rounded-lg"><option value="all">All Types</option><option value="video">Video</option><option value="audio">Audio</option></select>
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-4">
+          <input value={search} onChange={e=>{setSearch(e.target.value); setPage(1)}} placeholder="Search Call ID / Inmate" className="col-span-2 px-4 py-2 border-2 border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
+          <select value={statusFilter} onChange={e=>{setStatusFilter(e.target.value); setPage(1)}} className="px-4 py-2 border-2 border-neutral-300 rounded-lg"><option value="all">All Status</option><option value="completed">Completed</option><option value="failed">Failed</option></select>
+          <select value={typeFilter} onChange={e=>{setTypeFilter(e.target.value); setPage(1)}} className="px-4 py-2 border-2 border-neutral-300 rounded-lg"><option value="all">All Types</option><option value="video">Video</option><option value="audio">Audio</option></select>
+          <select value={kioskFilter} onChange={e=>{setKioskFilter(e.target.value); setPage(1)}} className="px-4 py-2 border-2 border-neutral-300 rounded-lg"><option value="all">All Kiosks</option>{kiosks.map(k=><option key={k} value={k}>{k}</option>)}</select>
+          <div className="flex gap-2 col-span-2 md:col-span-1">
+            <input type="date" value={dateFrom} onChange={e=>{setDateFrom(e.target.value); setPage(1)}} className="flex-1 px-2 py-2 border-2 border-neutral-300 rounded-lg text-sm" />
+            <input type="date" value={dateTo} onChange={e=>{setDateTo(e.target.value); setPage(1)}} className="flex-1 px-2 py-2 border-2 border-neutral-300 rounded-lg text-sm" />
+          </div>
         </div>
         {filtered.length === 0 ? (
           <div className="text-center py-12">
@@ -144,7 +170,7 @@ export function CallHistoryPage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((call) => {
+                {paged.map((call) => {
                   const rec = recordings[call.callId];
                   return (
                   <tr key={call.callId} className="border-b border-neutral-100 hover:bg-neutral-50">
@@ -178,6 +204,13 @@ export function CallHistoryPage() {
                 )})}
               </tbody>
             </table>
+          </div>
+        )}
+        {filtered.length > pageSize && (
+          <div className="flex justify-between items-center mt-4">
+            <button disabled={page===1} onClick={()=>setPage(p=>p-1)} className="px-3 py-1 border rounded disabled:opacity-50">Prev</button>
+            <span className="text-sm">Page {page} of {totalPages}</span>
+            <button disabled={page===totalPages} onClick={()=>setPage(p=>p+1)} className="px-3 py-1 border rounded disabled:opacity-50">Next</button>
           </div>
         )}
       </Card>
