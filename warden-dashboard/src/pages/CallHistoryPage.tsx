@@ -37,7 +37,7 @@ export function CallHistoryPage() {
   ];
   const dummyRecs: Recording[] = [
     { recordingId: 'REC-001', callId: 'CALL-20240801-001', inmateId: 'INM-1021', kioskId: 'KIOSK-01', startTime: dummyCalls[0].startTime, endTime: dummyCalls[0].endTime, duration: 720, size: 45*1024*1024, url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4', encryption: 'AES-256', retentionDays: 30, status: 'completed' },
-    { recordingId: 'REC-002', callId: 'CALL-20240802-002', inmateId: 'INM-1023', kioskId: 'KIOSK-02', startTime: dummyCalls[1].startTime, endTime: dummyCalls[1].endTime, duration: 480, size: 22*1024*1024, url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4', encryption: 'AES-256', retentionDays: 30, status: 'completed' },
+    { recordingId: 'REC-002', callId: 'CALL-20240802-002', inmateId: 'INM-1023', kioskId: 'KIOSK-02', startTime: dummyCalls[1].startTime, endTime: dummyCalls[1].endTime, duration: 480, size: 8*1024*1024, url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', encryption: 'AES-256', retentionDays: 30, status: 'completed' },
   ];
 
   const loadCalls = useCallback(async () => {
@@ -334,7 +334,11 @@ export function CallHistoryPage() {
               <button onClick={() => setPlaying(null)} className="text-neutral-500 hover:text-neutral-900">✕</button>
             </div>
             {playing.callId && (
-              <video controls autoPlay src={playing.url || ''} className="w-full rounded-lg bg-black" style={{maxHeight:'60vh'}} />
+              calls.find(c=>c.callId===playing.callId)?.type==='audio' ? (
+                <audio controls autoPlay src={playing.url || ''} className="w-full" />
+              ) : (
+                <video controls autoPlay src={playing.url || ''} className="w-full rounded-lg bg-black" style={{maxHeight:'60vh'}} />
+              )
             )}
             <p className="text-xs text-neutral-500 mt-2">Inmate {playing.inmateId} • {formatDuration((playing.duration||0)/60)}</p>
           </div>
