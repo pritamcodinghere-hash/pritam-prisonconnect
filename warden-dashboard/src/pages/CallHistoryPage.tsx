@@ -314,10 +314,15 @@ export function CallHistoryPage() {
           </div>
         )}
         {filtered.length > pageSize && (
-          <div className="flex justify-between items-center mt-4">
-            <button disabled={page===1} onClick={()=>setPage(p=>p-1)} className="px-3 py-1 border rounded disabled:opacity-50">Prev</button>
-            <span className="text-sm">Page {page} of {totalPages}</span>
-            <button disabled={page===totalPages} onClick={()=>setPage(p=>p+1)} className="px-3 py-1 border rounded disabled:opacity-50">Next</button>
+          <div className="flex items-center justify-between mt-4 px-1">
+            <span className="text-xs text-neutral-500">Showing {(page-1)*pageSize+1}-{Math.min(page*pageSize, filtered.length)} of {filtered.length}</span>
+            <div className="flex items-center gap-1">
+              <button disabled={page===1} onClick={()=>setPage(1)} className="px-2.5 py-1.5 border rounded-lg text-xs disabled:opacity-30 hover:bg-neutral-50">«</button>
+              <button disabled={page===1} onClick={()=>setPage(p=>p-1)} className="px-3 py-1.5 border rounded-lg text-xs disabled:opacity-30 hover:bg-neutral-50">Prev</button>
+              <span className="px-3 py-1.5 bg-neutral-900 text-white rounded-lg text-xs font-medium">{page} / {totalPages}</span>
+              <button disabled={page===totalPages} onClick={()=>setPage(p=>p+1)} className="px-3 py-1.5 border rounded-lg text-xs disabled:opacity-30 hover:bg-neutral-50">Next</button>
+              <button disabled={page===totalPages} onClick={()=>setPage(totalPages)} className="px-2.5 py-1.5 border rounded-lg text-xs disabled:opacity-30 hover:bg-neutral-50">»</button>
+            </div>
           </div>
         )}
       </Card>
