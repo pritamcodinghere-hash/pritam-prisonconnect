@@ -15,6 +15,9 @@ export function CallHistoryPage() {
   const [calls, setCalls] = useState<CallHistoryItem[]>([]);
   const [recordings, setRecordings] = useState<Record<string, Recording>>({});
   const [playing, setPlaying] = useState<Recording | null>(null);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [typeFilter, setTypeFilter] = useState('all');
 
   const dummyCalls: CallHistoryItem[] = [
     { callId: 'CALL-20240801-001', roomId: 'ROOM-01', inmateId: 'INM-1021', contactId: 'FAM-201', kioskId: 'KIOSK-01', type: 'video', status: 'completed', startTime: new Date(Date.now()-86400000).toISOString(), endTime: new Date(Date.now()-86400000+12*60000).toISOString(), durationMinutes: 12 },
@@ -84,10 +87,6 @@ export function CallHistoryPage() {
       day: 'numeric'
     });
   };
-
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [typeFilter, setTypeFilter] = useState('all');
 
   const filtered = calls.filter(c => {
     const s = search.toLowerCase();
