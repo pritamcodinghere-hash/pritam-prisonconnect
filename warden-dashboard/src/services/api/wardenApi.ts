@@ -318,9 +318,21 @@ export const wardenApi = {
   getInmate: (inmateId: string) =>
     cachedGet(`inmates:${inmateId}`, () => apiClient.get<ApiResponse<Inmate>>(`/inmates/${inmateId}`).then((r) => r.data?.data)),
 
+  createInmate: (data: Partial<Inmate> & {kioskId?:string}) =>
+    apiClient.post<ApiResponse<Inmate>>('/inmates', data).then((r) => { invalidateCache('inmates'); return r.data?.data; }),
+
+  deleteInmateApi: (inmateId: string) =>
+    apiClient.delete<ApiResponse<void>>(`/inmates/${inmateId}`).then((r) => { invalidateCache('inmates'); return r.data; }),
+
   // Contacts
   getContacts: () =>
     cachedGet('contacts', () => apiClient.get<ApiResponse<Contact[]>>('/contacts').then((r) => r.data?.data ?? [])),
+
+  createContact: (inmateId: string, data: Partial<Contact>) =>
+    apiClient.post<ApiResponse<Contact>>(`/admin/prisoners/${inmateId}/contacts`, data).then((r) => { invalidateCache('contacts'); return r.data?.data; }),
+
+  deleteContactApi: (contactId: string) =>
+    apiClient.delete<ApiResponse<void>>(`/contacts/${contactId}`).then((r) => { invalidateCache('contacts'); return r.data; }),
 
   // Wallets
   getWallets: () =>
