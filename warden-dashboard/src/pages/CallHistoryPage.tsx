@@ -79,20 +79,20 @@ export function CallHistoryPage() {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-IN', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+    if(!dateString) return '—';
+    const d = new Date(dateString);
+    if(isNaN(d.getTime())) return '—';
+    return d.toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' });
   };
 
-  const kiosks = Array.from(new Set(calls.map(c=>c.kioskId)));
-  const avgDuration = calls.length ? (calls.reduce((a,c)=>a+c.durationMinutes,0)/calls.length).toFixed(1) : '0';
+  const kiosks = Array.from(new Set(calls.filter(Boolean).map(c=>c.kioskId).filter(Boolean)));
+  const avgDuration = calls.length ? (calls.filter(Boolean).reduce((a,c)=>a+(c.durationMinutes||0),0)/calls.length).toFixed(1) : '0';
   const withRec = Object.keys(recordings).length;
 
   const filtered = calls.filter(c => {
+    if(!c || !c.startTime) return false;
     const s = search.toLowerCase();
-    const matchSearch = !s || c.callId.toLowerCase().includes(s) || c.inmateId.toLowerCase().includes(s) || c.contactId.toLowerCase().includes(s) || c.kioskId.toLowerCase().includes(s);
+    const matchSearch = !s || (c.callId||'').toLowerCase().includes(s) || (c.inmateId||'').toLowerCase().includes(s) || (c.contactId||'').toLowerCase().includes(s) || (c.kioskId||'').toLowerCase().includes(s);
     const matchStatus = statusFilter==='all' || c.status===statusFilter;
     const matchType = typeFilter==='all' || c.type===typeFilter;
     const matchKiosk = kioskFilter==='all' || c.kioskId===kioskFilter;
@@ -100,9 +100,6 @@ export function CallHistoryPage() {
     const matchFrom = !dateFrom || d >= dateFrom;
     const matchTo = !dateTo || d <= dateTo;
     return matchSearch && matchStatus && matchType && matchKiosk && matchFrom && matchTo;
-  }).sort((a,b)=>{
-    if(sortField==='date') return sortDir==='asc' ? new Date(a.startTime).getTime()-new Date(b.startTime).getTime() : new Date(b.startTime).getTime()-new Date(a.startTime).getTime();
-    return sortDir==='asc' ? a.durationMinutes-b.durationMinutes : b.durationMinutes-a.durationMinutes;
   });
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const paged = filtered.slice((page-1)*pageSize, page*pageSize);
