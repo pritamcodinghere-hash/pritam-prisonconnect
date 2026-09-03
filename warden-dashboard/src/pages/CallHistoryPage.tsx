@@ -252,6 +252,7 @@ export function CallHistoryPage() {
                   <th className="text-left py-3 px-4 text-sm font-semibold text-neutral-900">Call ID</th>
                   <th className="text-left py-3 px-4 text-sm font-semibold text-neutral-900 cursor-pointer select-none" onClick={()=>toggleSort('date')}>Date {sortField==='date'?(sortDir==='asc'?'↑':'↓'):''}</th>
                   <th className="text-left py-3 px-4 text-sm font-semibold text-neutral-900">Inmate</th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-neutral-900">Risk</th>
                   <th className="text-left py-3 px-4 text-sm font-semibold text-neutral-900">Contact</th>
                   <th className="text-left py-3 px-4 text-sm font-semibold text-neutral-900">Kiosk</th>
                   <th className="text-left py-3 px-4 text-sm font-semibold text-neutral-900">Type</th>
@@ -274,11 +275,12 @@ export function CallHistoryPage() {
                       <div className="flex items-center gap-2">
                         <img src={inmates[call.inmateId]?.photoUrl || `https://i.pravatar.cc/100?img=${call.inmateId.slice(-2)}`} alt="" className="w-8 h-8 rounded-full object-cover bg-neutral-200" onError={e=> (e.currentTarget.src='https://i.pravatar.cc/100')} />
                         <div>
-                          <p className="text-sm font-medium text-neutral-900 flex items-center gap-1">{inmates[call.inmateId] ? `${inmates[call.inmateId].firstName} ${inmates[call.inmateId].lastName}` : call.inmateId} <span className={`px-1 py-0.5 rounded text-xs ${risk==='high'?'bg-error/10 text-error':risk==='low'?'bg-success/10 text-success':'bg-amber-100 text-amber-700'}`}>{risk}</span></p>
+                          <p className="text-sm font-medium text-neutral-900">{inmates[call.inmateId] ? `${inmates[call.inmateId].firstName} ${inmates[call.inmateId].lastName}` : call.inmateId}</p>
                           <p className="text-xs text-neutral-500">{call.inmateId}</p>
                         </div>
                       </div>
                     </td>
+                    <td className="py-3 px-4"><span className={`px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${risk==='high'?'bg-error/10 text-error border border-error/20':risk==='low'?'bg-success/10 text-success border border-success/20':'bg-amber-100 text-amber-700 border border-amber-200'}`}>{risk}</span></td>
                     <td className="py-3 px-4 text-sm text-neutral-900">{call.contactId}</td>
                     <td className="py-3 px-4 text-sm text-neutral-900">{call.kioskId}</td>
                     <td className="py-3 px-4 text-sm text-neutral-900 capitalize">{call.type}</td>
