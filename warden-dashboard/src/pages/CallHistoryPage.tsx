@@ -85,17 +85,48 @@ export function CallHistoryPage() {
     });
   };
 
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [typeFilter, setTypeFilter] = useState('all');
+
+  const filtered = calls.filter(c => {
+    const s = search.toLowerCase();
+    const matchSearch = !s || c.callId.toLowerCase().includes(s) || c.inmateId.toLowerCase().includes(s) || c.contactId.toLowerCase().includes(s) || c.kioskId.toLowerCase().includes(s);
+    const matchStatus = statusFilter==='all' || c.status===statusFilter;
+    const matchType = typeFilter==='all' || c.type===typeFilter;
+    return matchSearch && matchStatus && matchType;
+  });
+
+  const exportCSV = () => {
+    const rows = [['Call ID','Date','Inmate','Contact','Kiosk','Type','Duration','Status','Recording']];
+    filtered.forEach(c => {
+      const rec = recordings[c.callId];
+      rows.push([c.callId, formatDate(c.startTime), c.inmateId, c.contactId, c.kioskId, c.type, formatDuration(c.durationMinutes), c.status, rec?.url || rec?.status || 'No recording']);
+    });
+    const csv = rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], {type:'text/csv'}); const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download='call-logs.csv'; a.click(); URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-neutral-900">Call Logs</h1>
-        <p className="text-neutral-600 mt-1">Call history with recordings - merged view</p>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-neutral-900">Call Logs</h1>
+          <p className="text-neutral-600 mt-1">Call history with recordings - {filtered.length} of {calls.length}</p>
+        </div>
+        <button onClick={exportCSV} className="px-4 py-2 bg-success text-white rounded-lg text-sm font-medium hover:bg-success-700">⬇ Export CSV</button>
       </div>
 
       <Card>
-        {calls.length === 0 ? (
+        <div className="flex flex-col md:flex-row gap-3 mb-4">
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search Call ID / Inmate / Contact / Kiosk" className="flex-1 px-4 py-2 border-2 border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
+          <select value={statusFilter} onChange={e=>setStatusFilter(e.target.value)} className="px-4 py-2 border-2 border-neutral-300 rounded-lg"><option value="all">All Status</option><option value="completed">Completed</option><option value="failed">Failed</option></select>
+          <select value={typeFilter} onChange={e=>setTypeFilter(e.target.value)} className="px-4 py-2 border-2 border-neutral-300 rounded-lg"><option value="all">All Types</option><option value="video">Video</option><option value="audio">Audio</option></select>
+        </div>
+        {filtered.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-neutral-600">No call history available</p>
+            <p className="text-neutral-600">No call logs found</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -114,7 +145,7 @@ export function CallHistoryPage() {
                 </tr>
               </thead>
               <tbody>
-                {calls.map((call) => {
+                {filtered.map((call) => {
                   const rec = recordings[call.callId];
                   return (
                   <tr key={call.callId} className="border-b border-neutral-100 hover:bg-neutral-50">
