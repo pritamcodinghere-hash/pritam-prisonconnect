@@ -12,6 +12,7 @@ import { MonitorScreenPage } from '@/pages/MonitorScreenPage';
 import { InmateDetailsPage } from '@/pages/InmateDetailsPage';
 import { CallHistoryPage } from '@/pages/CallHistoryPage';
 import { RecordingCenterPage } from '@/pages/RecordingCenterPage';
+import { InmateFamilyPage } from '@/pages/InmateFamilyPage';
 import { AlertsPage } from '@/pages/AlertsPage';
 import { ReportsPage } from '@/pages/ReportsPage';
 import { SettingsPage } from '@/pages/SettingsPage';
@@ -40,6 +41,7 @@ export const RoutePaths = {
   callHistory: '/inmates/:inmateId/calls',
   callHistoryAll: '/calls/history',
   callLogs: '/calls/logs',
+  inmateFamily: '/inmates-family',
   recordings: '/recordings',
   alerts: '/alerts',
   devices: '/devices',
@@ -84,6 +86,7 @@ export const router = createBrowserRouter([
       { path: RoutePaths.callHistory, element: <CallHistoryPage /> },
       { path: RoutePaths.callHistoryAll, element: <CallHistoryPage /> },
       { path: RoutePaths.callLogs, element: <CallHistoryPage /> },
+      { path: RoutePaths.inmateFamily, element: <InmateFamilyPage /> },
       { path: RoutePaths.recordings, element: <RecordingCenterPage /> },
       { path: RoutePaths.alerts, element: <AlertsPage /> },
       { path: RoutePaths.devices, element: <DevicesPage /> },
