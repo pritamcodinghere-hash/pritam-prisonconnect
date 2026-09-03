@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { Card } from '@/components/Card';
 import { Loading } from '@/components/States';
 import { wardenApi } from '@/services/api/wardenApi';
-import type { CallHistoryItem, Recording } from '@/services/api/wardenApi';
+import type { CallHistoryItem, Recording, Inmate } from '@/services/api/wardenApi';
 
 /**
  * Call History Page - Complete history of all inmate calls.
@@ -14,6 +14,7 @@ export function CallHistoryPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [calls, setCalls] = useState<CallHistoryItem[]>([]);
   const [recordings, setRecordings] = useState<Record<string, Recording>>({});
+  const [inmates, setInmates] = useState<Record<string, Inmate>>({});
   const [playing, setPlaying] = useState<Recording | null>(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -37,19 +38,32 @@ export function CallHistoryPage() {
   const loadCalls = useCallback(async () => {
     try {
       setLoadError(null);
-      const [callHistory, recs] = await Promise.all([wardenApi.getCallHistory(), wardenApi.getRecordings()]);
+      const [callHistory, recs, inmateList] = await Promise.all([wardenApi.getCallHistory(), wardenApi.getRecordings(), wardenApi.getInmates().catch(()=>[] as Inmate[])]);
       const finalCalls = callHistory.length > 0 ? callHistory : dummyCalls;
       const finalRecs = recs.length > 0 ? recs : dummyRecs;
       setCalls(finalCalls);
       const map: Record<string, Recording> = {};
       finalRecs.forEach((r) => { map[r.callId] = r; });
       setRecordings(map);
+      const imap: Record<string, Inmate> = {};
+      (inmateList as Inmate[]).forEach(i=> imap[i.inmateId]=i);
+      // dummy inmate fallback
+      if(Object.keys(imap).length===0){
+        dummyCalls.forEach((c,i)=>{
+          imap[c.inmateId] = { inmateId:c.inmateId, firstName:`Rahul${i+1}`, lastName:'Kumar', prisonId:'PR-01', facility:'Barrack A', cellBlock:`B-${i+1}`, status:'active', photoUrl:`https://i.pravatar.cc/100?img=${i+10}`, securityLevel:'medium', sentenceDetails:'' } as Inmate;
+        });
+      }
+      setInmates(imap);
     } catch (error) {
-      // fallback to dummy for testing
       setCalls(dummyCalls);
       const map: Record<string, Recording> = {};
       dummyRecs.forEach((r) => { map[r.callId] = r; });
       setRecordings(map);
+      const imap: Record<string, Inmate> = {};
+      dummyCalls.forEach((c,i)=>{
+        imap[c.inmateId] = { inmateId:c.inmateId, firstName:`Rahul${i+1}`, lastName:'Kumar', prisonId:'PR-01', facility:'Barrack A', cellBlock:`B-${i+1}`, status:'active', photoUrl:`https://i.pravatar.cc/100?img=${i+10}`, securityLevel:'medium', sentenceDetails:'' } as Inmate;
+      });
+      setInmates(imap);
     } finally {
       setIsLoading(false);
     }
@@ -174,9 +188,17 @@ export function CallHistoryPage() {
                   const rec = recordings[call.callId];
                   return (
                   <tr key={call.callId} className="border-b border-neutral-100 hover:bg-neutral-50">
-                    <td className="py-3 px-4 text-sm text-neutral-900">{call.callId}</td>
+                    <td className="py-3 px-4 text-sm text-neutral-900 font-mono text-xs">{call.callId}</td>
                     <td className="py-3 px-4 text-sm text-neutral-900">{formatDate(call.startTime)}</td>
-                    <td className="py-3 px-4 text-sm text-neutral-900">{call.inmateId}</td>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-2">
+                        <img src={inmates[call.inmateId]?.photoUrl || `https://i.pravatar.cc/100?img=${call.inmateId.slice(-2)}`} alt="" className="w-8 h-8 rounded-full object-cover bg-neutral-200" onError={e=> (e.currentTarget.src='https://i.pravatar.cc/100')} />
+                        <div>
+                          <p className="text-sm font-medium text-neutral-900">{inmates[call.inmateId] ? `${inmates[call.inmateId].firstName} ${inmates[call.inmateId].lastName}` : call.inmateId}</p>
+                          <p className="text-xs text-neutral-500">{call.inmateId}</p>
+                        </div>
+                      </div>
+                    </td>
                     <td className="py-3 px-4 text-sm text-neutral-900">{call.contactId}</td>
                     <td className="py-3 px-4 text-sm text-neutral-900">{call.kioskId}</td>
                     <td className="py-3 px-4 text-sm text-neutral-900 capitalize">{call.type}</td>
