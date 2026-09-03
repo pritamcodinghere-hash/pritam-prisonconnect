@@ -70,10 +70,7 @@ export function InmateFamilyPage() {
       <Card>
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-bold flex items-center gap-2"><span className="w-9 h-9 rounded-xl bg-primary-600 text-white flex items-center justify-center text-sm shadow-sm">👤</span> All Prisoners <span className="px-2.5 py-1 bg-neutral-900 text-white rounded-full text-xs font-bold">{filteredPrisoners.length}</span> {selected && <span className="text-sm font-medium text-primary-600">• {selected.firstName} selected</span>}</h2>
-          <div className="flex gap-2">
-            <button onClick={()=>setShowAddInmate(true)} className="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm shadow-sm hover:bg-primary-700 font-medium">+ Add Prisoner</button>
-            <button onClick={()=>setShowAddFamily(true)} className="px-4 py-2 bg-success text-white rounded-lg text-sm shadow-sm hover:bg-success-700 font-medium">+ Add Family</button>
-          </div>
+          <button onClick={()=>setShowAddInmate(true)} className="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm shadow-sm hover:bg-primary-700 font-medium">+ Add Prisoner</button>
         </div>
         <div className="flex gap-2 mb-3">
           <input value={searchPrisoner} onChange={e=>{setSearchPrisoner(e.target.value); setPrisonerPage(1)}} placeholder="Search prisoner..." className="flex-1 px-3 py-2 border-2 border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm" />
