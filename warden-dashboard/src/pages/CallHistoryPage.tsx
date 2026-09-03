@@ -88,8 +88,8 @@ export function CallHistoryPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-neutral-900">Call History</h1>
-        <p className="text-neutral-600 mt-1">Complete history of all inmate calls</p>
+        <h1 className="text-3xl font-bold text-neutral-900">Call Logs</h1>
+        <p className="text-neutral-600 mt-1">Call history with recordings - merged view</p>
       </div>
 
       <Card>
