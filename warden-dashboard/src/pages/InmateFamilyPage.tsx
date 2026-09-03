@@ -38,6 +38,7 @@ export function InmateFamilyPage() {
 
   const deleteInmate = (id:string)=> setInmates(s=>s.filter(i=>i.inmateId!==id));
   const deleteFamily = (id:string)=> setContacts(s=>s.filter(c=>c.id!==id));
+  const toggleApproval = (id:string)=> setContacts(s=>s.map(c=> c.id===id ? {...c, isApproved:!c.isApproved} : c));
   const addInmate = ()=>{ if(!newInmate.inmateId||!newInmate.firstName) return; setInmates(s=>[...s,{ inmateId:newInmate.inmateId, firstName:newInmate.firstName, lastName:newInmate.lastName, prisonId:'PR-01', facility:newInmate.facility, cellBlock:'B-X', status:'active', photoUrl:'https://i.pravatar.cc/100', securityLevel:'medium', sentenceDetails:'' } as Inmate]); setNewInmate({firstName:'',lastName:'',inmateId:'',facility:'Barrack A'}); setShowAddInmate(false); };
   const addFamily = ()=>{ if(!newFamily.fullName||!newFamily.phoneNumber) return; const targetId = newFamily.inmateId || selectedId || inmates[0]?.inmateId || 'INM-1021'; setContacts(s=>[...s,{ id:`FAM-${Date.now()}`, inmateId:targetId, fullName:newFamily.fullName, relationship:newFamily.relationship, phoneNumber:newFamily.phoneNumber, isApproved:false, photoUrl:'https://i.pravatar.cc/100', lastCallDate:new Date().toISOString(), nextScheduledCallDate:null } as Contact]); setNewFamily({fullName:'',relationship:'',phoneNumber:'',inmateId:''}); setShowAddFamily(false); };
 
@@ -131,7 +132,7 @@ export function InmateFamilyPage() {
                   <td className="py-2.5 px-3 text-sm font-medium">{c.fullName}</td>
                   <td className="py-2.5 px-3 text-sm"><span className="px-2.5 py-1 bg-neutral-100 rounded-full text-xs font-medium border">{c.relationship}</span></td>
                   <td className="py-2.5 px-3 text-sm font-mono text-xs">{c.phoneNumber}</td>
-                  <td className="py-2.5 px-3"><span className={`px-2.5 py-1 rounded-full text-xs font-medium border ${c.isApproved?'bg-success/10 text-success border-success/20':'bg-amber-100 text-amber-700 border-amber-200'}`}>{c.isApproved?'Approved':'Pending'}</span></td>
+                  <td className="py-2.5 px-3"><button onClick={()=>toggleApproval(c.id)} className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${c.isApproved?'bg-success/10 text-success border-success/20 hover:bg-success hover:text-white':'bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-500 hover:text-white'}`} title="Click to toggle">{c.isApproved?'Approved':'Pending'} • click to toggle</button></td>
                   <td className="py-2.5 px-3"><button onClick={()=>deleteFamily(c.id)} className="px-3 py-1.5 bg-white border border-error text-error rounded-lg text-xs font-medium hover:bg-error hover:text-white transition-colors">Delete</button></td>
                 </tr>
               ))}
