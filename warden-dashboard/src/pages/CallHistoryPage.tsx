@@ -26,6 +26,8 @@ export function CallHistoryPage() {
   const [selected, setSelected] = useState<CallHistoryItem | null>(null);
   const [sortField, setSortField] = useState<'date'|'duration'>('date');
   const [sortDir, setSortDir] = useState<'asc'|'desc'>('desc');
+  const [viewMode, setViewMode] = useState<'table'|'timeline'>('table');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const pageSize = 5;
 
   const dummyCalls: CallHistoryItem[] = [
@@ -134,6 +136,19 @@ export function CallHistoryPage() {
     if(sortField===f) setSortDir(d=> d==='asc'?'desc':'asc'); else {setSortField(f); setSortDir('desc');}
   };
 
+  const transcripts: Record<string,string> = {
+    'CALL-20240801-001': 'Inmate: Request for extra time ... Warden: Approved with conditions ...',
+    'CALL-20240802-002': 'Family: Health update ... Inmate: All good ...',
+    'CALL-20240803-003': 'Call dropped due to network ...',
+  };
+  const quality = (c: CallHistoryItem) => c.status==='failed' ? 'bg-error' : c.durationMinutes>10 ? 'bg-success' : c.durationMinutes>5 ? 'bg-amber-500' : 'bg-neutral-400';
+  const retentionLeft = (r: Recording) => {
+    const days = r.retentionDays || 30;
+    const elapsed = Math.floor((Date.now() - new Date(r.startTime).getTime())/86400000);
+    const left = Math.max(0, days - elapsed);
+    return {left, pct: Math.max(0, Math.min(100, (left/days)*100))};
+  };
+
   const exportCSV = () => {
     const rows = [['Call ID','Date','Inmate','Contact','Kiosk','Type','Duration','Status','Recording']];
     filtered.forEach(c => {
@@ -145,14 +160,36 @@ export function CallHistoryPage() {
     const a=document.createElement('a'); a.href=url; a.download='call-logs.csv'; a.click(); URL.revokeObjectURL(url);
   };
 
+  const toggleBulk = (id: string) => {
+    setSelectedIds(s => {
+      const n = new Set(s);
+      if (n.has(id)) n.delete(id); else n.add(id);
+      return n;
+    });
+  };
+  const exportSelected = () => {
+    const toExport = filtered.filter(c=> selectedIds.has(c.callId));
+    const rows = [['Call ID','Date','Inmate','Contact','Kiosk','Type','Duration','Status']];
+    (toExport.length?toExport:filtered).forEach(c=> rows.push([c.callId, formatDate(c.startTime), c.inmateId, c.contactId, c.kioskId, c.type, formatDuration(c.durationMinutes), c.status]));
+    const csv = rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob=new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download= selectedIds.size? 'call-logs-selected.csv':'call-logs.csv'; a.click(); URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-neutral-900">Call Logs</h1>
-          <p className="text-neutral-600 mt-1">Call history with recordings - {filtered.length} of {calls.length}</p>
+          <p className="text-neutral-600 mt-1">Call history with recordings - {filtered.length} of {calls.length} {selectedIds.size? `• ${selectedIds.size} selected`:''}</p>
         </div>
-        <button onClick={exportCSV} className="px-4 py-2 bg-success text-white rounded-lg text-sm font-medium hover:bg-success-700">⬇ Export CSV</button>
+        <div className="flex gap-2">
+          <div className="flex rounded-lg border-2 border-neutral-300 overflow-hidden">
+            <button onClick={()=>setViewMode('table')} className={`px-3 py-1.5 text-sm ${viewMode==='table'?'bg-neutral-900 text-white':'bg-white'}`}>Table</button>
+            <button onClick={()=>setViewMode('timeline')} className={`px-3 py-1.5 text-sm ${viewMode==='timeline'?'bg-neutral-900 text-white':'bg-white'}`}>Timeline</button>
+          </div>
+          <button onClick={exportCSV} className="px-4 py-2 bg-success text-white rounded-lg text-sm font-medium hover:bg-success-700">⬇ Export CSV</button>
+          {selectedIds.size>0 && <button onClick={exportSelected} className="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm">⬇ Selected ({selectedIds.size})</button>}
+        </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -178,11 +215,40 @@ export function CallHistoryPage() {
           <div className="text-center py-12">
             <p className="text-neutral-600">No call logs found</p>
           </div>
+        ) : viewMode==='timeline' ? (
+          <div className="space-y-4">
+            {paged.map(call=>{
+              const rec=recordings[call.callId];
+              const risk = inmates[call.inmateId]?.securityLevel || 'medium';
+              return (
+                <div key={call.callId} onClick={()=>setSelected(call)} className="flex gap-4 p-4 border rounded-xl hover:bg-neutral-50 cursor-pointer">
+                  <div className="flex flex-col items-center">
+                    <div className={`w-3 h-3 rounded-full ${quality(call)}`} />
+                    <div className="w-0.5 flex-1 bg-neutral-200 mt-2" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex justify-between">
+                      <p className="font-mono text-xs">{call.callId} • {formatDate(call.startTime)} • {formatDuration(call.durationMinutes)}</p>
+                      <span className={`px-2 py-0.5 rounded-full text-xs ${call.status==='completed'?'bg-success/10 text-success':'bg-error/10 text-error'}`}>{call.status}</span>
+                    </div>
+                    <div className="flex items-center gap-2 mt-2">
+                      <img src={inmates[call.inmateId]?.photoUrl || 'https://i.pravatar.cc/100'} alt="" className="w-8 h-8 rounded-full" />
+                      <p className="text-sm font-medium">{inmates[call.inmateId]?.firstName || call.inmateId} <span className={`ml-2 px-1.5 py-0.5 rounded text-xs ${risk==='high'?'bg-error/10 text-error':risk==='low'?'bg-success/10 text-success':'bg-amber-100 text-amber-700'}`}>{risk}</span></p>
+                      <span className="text-xs text-neutral-500">• {call.kioskId} • {call.type}</span>
+                    </div>
+                    {transcripts[call.callId] && <p className="text-xs text-neutral-500 mt-2 line-clamp-1 italic">"{transcripts[call.callId]}"</p>}
+                    {rec && <div className="mt-2 flex items-center gap-2 text-xs"><span className="text-neutral-500">{rec.encryption || 'AES-256'}</span>{rec.retentionDays && <><div className="flex-1 max-w-32 h-1.5 bg-neutral-200 rounded"><div className="h-1.5 bg-purple-600 rounded" style={{width: `${retentionLeft(rec).pct}%`}} /></div><span className="text-purple-600">{retentionLeft(rec).left}d left</span></>}<button onClick={e=>{e.stopPropagation(); setPlaying(rec)}} className="ml-auto px-2 py-1 bg-primary-600 text-white rounded text-xs">▶ Play</button></div>}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-neutral-200">
+                  <th className="px-3 py-3"><input type="checkbox" checked={paged.length>0 && paged.every(c=>selectedIds.has(c.callId))} onChange={e=>{ if(e.target.checked) setSelectedIds(new Set(paged.map(c=>c.callId))); else setSelectedIds(new Set());}} /></th>
                   <th className="text-left py-3 px-4 text-sm font-semibold text-neutral-900">Call ID</th>
                   <th className="text-left py-3 px-4 text-sm font-semibold text-neutral-900 cursor-pointer select-none" onClick={()=>toggleSort('date')}>Date {sortField==='date'?(sortDir==='asc'?'↑':'↓'):''}</th>
                   <th className="text-left py-3 px-4 text-sm font-semibold text-neutral-900">Inmate</th>
@@ -197,15 +263,18 @@ export function CallHistoryPage() {
               <tbody>
                 {paged.map((call) => {
                   const rec = recordings[call.callId];
+                  const risk = inmates[call.inmateId]?.securityLevel || 'medium';
+                  const ret = rec ? retentionLeft(rec) : null;
                   return (
                   <tr key={call.callId} onClick={()=>setSelected(call)} className="border-b border-neutral-100 hover:bg-neutral-50 cursor-pointer">
-                    <td className="py-3 px-4 text-sm text-neutral-900 font-mono text-xs">{call.callId}</td>
+                    <td className="px-3" onClick={e=>e.stopPropagation()}><input type="checkbox" checked={selectedIds.has(call.callId)} onChange={()=>toggleBulk(call.callId)} /></td>
+                    <td className="py-3 px-4 text-sm text-neutral-900 font-mono text-xs"><div className="flex items-center gap-2"><span className={`w-2 h-2 rounded-full ${quality(call)}`} />{call.callId}</div><p className="text-xs text-neutral-400 truncate max-w-32" title={transcripts[call.callId]}>{transcripts[call.callId]?.slice(0,30) || ''}</p></td>
                     <td className="py-3 px-4 text-sm text-neutral-900">{formatDate(call.startTime)}</td>
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-2">
                         <img src={inmates[call.inmateId]?.photoUrl || `https://i.pravatar.cc/100?img=${call.inmateId.slice(-2)}`} alt="" className="w-8 h-8 rounded-full object-cover bg-neutral-200" onError={e=> (e.currentTarget.src='https://i.pravatar.cc/100')} />
                         <div>
-                          <p className="text-sm font-medium text-neutral-900">{inmates[call.inmateId] ? `${inmates[call.inmateId].firstName} ${inmates[call.inmateId].lastName}` : call.inmateId}</p>
+                          <p className="text-sm font-medium text-neutral-900 flex items-center gap-1">{inmates[call.inmateId] ? `${inmates[call.inmateId].firstName} ${inmates[call.inmateId].lastName}` : call.inmateId} <span className={`px-1 py-0.5 rounded text-xs ${risk==='high'?'bg-error/10 text-error':risk==='low'?'bg-success/10 text-success':'bg-amber-100 text-amber-700'}`}>{risk}</span></p>
                           <p className="text-xs text-neutral-500">{call.inmateId}</p>
                         </div>
                       </div>
@@ -223,9 +292,12 @@ export function CallHistoryPage() {
                     </td>
                     <td className="py-3 px-4" onClick={e=>e.stopPropagation()}>
                       {rec?.url ? (
-                        <div className="flex gap-2">
-                          <button onClick={() => setPlaying(rec)} className="px-3 py-1 bg-primary-600 text-white rounded-md text-xs hover:bg-primary-700">▶ Play</button>
-                          <a href={rec.url} download className="px-3 py-1 bg-neutral-800 text-white rounded-md text-xs hover:bg-neutral-900">⬇ Download</a>
+                        <div className="space-y-1">
+                          <div className="flex gap-2">
+                            <button onClick={() => setPlaying(rec)} className="px-3 py-1 bg-primary-600 text-white rounded-md text-xs hover:bg-primary-700">▶ Play</button>
+                            <a href={rec.url} download className="px-3 py-1 bg-neutral-800 text-white rounded-md text-xs hover:bg-neutral-900">⬇ Download</a>
+                          </div>
+                          <div className="flex items-center gap-1 text-xs"><div className="flex-1 max-w-20 h-1 bg-neutral-200 rounded"><div className="h-1 bg-purple-600 rounded" style={{width:`${ret!.pct}%`}} /></div><span className="text-purple-600">{ret!.left}d</span></div>
                         </div>
                       ) : rec ? (
                         <span className="text-xs text-neutral-500 capitalize">{rec.status}</span>
