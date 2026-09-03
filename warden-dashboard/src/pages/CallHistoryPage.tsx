@@ -30,45 +30,19 @@ export function CallHistoryPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const pageSize = 5;
 
-  const dummyCalls: CallHistoryItem[] = [
-    { callId: 'CALL-20240801-001', roomId: 'ROOM-01', inmateId: 'INM-1021', contactId: 'FAM-201', kioskId: 'KIOSK-01', type: 'video', status: 'completed', startTime: new Date(Date.now()-86400000).toISOString(), endTime: new Date(Date.now()-86400000+12*60000).toISOString(), durationMinutes: 12 },
-    { callId: 'CALL-20240802-002', roomId: 'ROOM-02', inmateId: 'INM-1023', contactId: 'FAM-205', kioskId: 'KIOSK-02', type: 'audio', status: 'completed', startTime: new Date(Date.now()-172800000).toISOString(), endTime: new Date(Date.now()-172800000+8*60000).toISOString(), durationMinutes: 8 },
-    { callId: 'CALL-20240803-003', roomId: 'ROOM-01', inmateId: 'INM-1025', contactId: 'FAM-210', kioskId: 'KIOSK-03', type: 'video', status: 'failed', startTime: new Date(Date.now()-259200000).toISOString(), endTime: new Date(Date.now()-259200000+2*60000).toISOString(), durationMinutes: 2 },
-  ];
-  const dummyRecs: Recording[] = [
-    { recordingId: 'REC-001', callId: 'CALL-20240801-001', inmateId: 'INM-1021', kioskId: 'KIOSK-01', startTime: dummyCalls[0].startTime, endTime: dummyCalls[0].endTime, duration: 720, size: 45*1024*1024, url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4', encryption: 'AES-256', retentionDays: 30, status: 'completed' },
-    { recordingId: 'REC-002', callId: 'CALL-20240802-002', inmateId: 'INM-1023', kioskId: 'KIOSK-02', startTime: dummyCalls[1].startTime, endTime: dummyCalls[1].endTime, duration: 480, size: 8*1024*1024, url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', encryption: 'AES-256', retentionDays: 30, status: 'completed' },
-  ];
-
   const loadCalls = useCallback(async () => {
     try {
       setLoadError(null);
       const [callHistory, recs, inmateList] = await Promise.all([wardenApi.getCallHistory(), wardenApi.getRecordings(), wardenApi.getInmates().catch(()=>[] as Inmate[])]);
-      const finalCalls = callHistory.length > 0 ? callHistory : dummyCalls;
-      const finalRecs = recs.length > 0 ? recs : dummyRecs;
-      setCalls(finalCalls);
+      setCalls(callHistory);
       const map: Record<string, Recording> = {};
-      finalRecs.forEach((r) => { map[r.callId] = r; });
+      recs.forEach((r) => { map[r.callId] = r; });
       setRecordings(map);
       const imap: Record<string, Inmate> = {};
       (inmateList as Inmate[]).forEach(i=> imap[i.inmateId]=i);
-      // dummy inmate fallback
-      if(Object.keys(imap).length===0){
-        dummyCalls.forEach((c,i)=>{
-          imap[c.inmateId] = { inmateId:c.inmateId, firstName:`Rahul${i+1}`, lastName:'Kumar', prisonId:'PR-01', facility:'Barrack A', cellBlock:`B-${i+1}`, status:'active', photoUrl:`https://i.pravatar.cc/100?img=${i+10}`, securityLevel:'medium', sentenceDetails:'' } as Inmate;
-        });
-      }
       setInmates(imap);
     } catch (error) {
-      setCalls(dummyCalls);
-      const map: Record<string, Recording> = {};
-      dummyRecs.forEach((r) => { map[r.callId] = r; });
-      setRecordings(map);
-      const imap: Record<string, Inmate> = {};
-      dummyCalls.forEach((c,i)=>{
-        imap[c.inmateId] = { inmateId:c.inmateId, firstName:`Rahul${i+1}`, lastName:'Kumar', prisonId:'PR-01', facility:'Barrack A', cellBlock:`B-${i+1}`, status:'active', photoUrl:`https://i.pravatar.cc/100?img=${i+10}`, securityLevel:'medium', sentenceDetails:'' } as Inmate;
-      });
-      setInmates(imap);
+      setLoadError('Failed to load call history');
     } finally {
       setIsLoading(false);
     }

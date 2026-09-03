@@ -19,22 +19,13 @@ export function InmateFamilyPage() {
   const [newInmate, setNewInmate] = useState({firstName:'',lastName:'',inmateId:'',facility:'Barrack A', kioskId:''});
   const [newFamily, setNewFamily] = useState({fullName:'',relationship:'',phoneNumber:'',inmateId:''});
 
-  const dummyInmates: (Inmate & {kioskId?:string})[] = [
-    { inmateId:'INM-1021', firstName:'Rahul', lastName:'Kumar', prisonId:'PR-01', facility:'Barrack A', cellBlock:'B-1', status:'active', photoUrl:'https://i.pravatar.cc/100?img=10', securityLevel:'medium', sentenceDetails:'2 years', kioskId:'KIOSK-01' } as any,
-    { inmateId:'INM-1023', firstName:'Amit', lastName:'Sharma', prisonId:'PR-01', facility:'Barrack A', cellBlock:'B-2', status:'active', photoUrl:'https://i.pravatar.cc/100?img=11', securityLevel:'high', sentenceDetails:'5 years', kioskId:'KIOSK-02' } as any,
-  ];
-  const dummyContacts: Contact[] = [
-    { id:'FAM-201', inmateId:'INM-1021', fullName:'Sunita Kumar', relationship:'Mother', phoneNumber:'9876543210', isApproved:true, photoUrl:'https://i.pravatar.cc/100?img=20', lastCallDate:new Date().toISOString(), nextScheduledCallDate:null },
-    { id:'FAM-205', inmateId:'INM-1023', fullName:'Priya Sharma', relationship:'Wife', phoneNumber:'9876543211', isApproved:false, photoUrl:'https://i.pravatar.cc/100?img=21', lastCallDate:new Date().toISOString(), nextScheduledCallDate:null },
-  ];
-
   const load = useCallback(async()=>{
     try{
       const [im, co] = await Promise.all([wardenApi.getInmates().catch(()=>[] as Inmate[]), wardenApi.getContacts().catch(()=>[] as Contact[])]);
-      setInmates(im.length?im:dummyInmates);
-      setContacts(co.length?co:dummyContacts);
+      setInmates(im);
+      setContacts(co);
     }catch{
-      setInmates(dummyInmates); setContacts(dummyContacts);
+      // keep empty on error - backend will show empty
     }finally{ setLoading(false); }
   },[]);
   useEffect(()=>{load();},[load]);
