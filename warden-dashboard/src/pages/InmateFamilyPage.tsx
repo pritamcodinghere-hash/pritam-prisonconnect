@@ -65,10 +65,8 @@ export function InmateFamilyPage() {
   const filteredFamily = filteredFamilyBase.slice((familyPage-1)*4, familyPage*4);
   return (
     <div className="space-y-6">
-      <div><h1 className="text-3xl font-bold tracking-tight">Prisoner & Family</h1></div>
+      <div><h1 className="text-3xl font-bold tracking-tight">Prisoner & Family</h1><p className="text-neutral-500 text-sm">Click prisoner for details & family</p></div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      {/* Block 1 - All Prisoners - click to select - pro */}
       <Card>
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-bold flex items-center gap-2"><span className="w-9 h-9 rounded-xl bg-primary-600 text-white flex items-center justify-center text-sm shadow-sm">👤</span> All Prisoners <span className="px-2.5 py-1 bg-neutral-900 text-white rounded-full text-xs font-bold">{filteredPrisoners.length}</span> {selected && <span className="text-sm font-medium text-primary-600">• {selected.firstName} selected</span>}</h2>
@@ -125,61 +123,6 @@ export function InmateFamilyPage() {
           </div>
         )}
       </Card>
-
-      {/* Block 2 - Family of Selected Prisoner - side by side - pro */}
-      <Card>
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-bold flex items-center gap-2"><span className="w-9 h-9 rounded-xl bg-success text-white flex items-center justify-center text-sm shadow-sm">👨‍👩‍👧</span> {selected ? `Family of ${selected.firstName} ${selected.lastName}` : 'Family Members'} <span className="px-2.5 py-1 bg-neutral-900 text-white rounded-full text-xs font-bold">{selectedId? filteredFamily.length : contacts.length}</span></h2>
-          <button onClick={()=>setShowAddFamily(true)} disabled={!selectedId} className={`px-4 py-2 rounded-lg text-sm shadow-sm font-medium ${selectedId?'bg-success text-white hover:bg-success-700':'bg-neutral-300 text-neutral-500 cursor-not-allowed'}`}>+ Add Family</button>
-        </div>
-        {!selectedId ? (
-          <div className="text-center py-12 border-2 border-dashed border-neutral-200 rounded-xl bg-neutral-50/50"><p className="text-neutral-700 font-semibold">Click any prisoner row to view family members here</p><p className="text-xs text-neutral-600 mt-1">Family details will appear side by side</p></div>
-        ) : (
-        <>
-        <div className="flex gap-2 mb-3">
-          <input value={searchFamily} onChange={e=>{setSearchFamily(e.target.value); setFamilyPage(1)}} placeholder="Search family..." className="flex-1 px-3 py-2 border-2 border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-success text-sm" />
-          <select value={relationFilter} onChange={e=>{setRelationFilter(e.target.value); setFamilyPage(1)}} className="px-3 py-2 border-2 border-neutral-200 rounded-lg text-sm"><option value="all">All Relations</option>{relations.map(r=><option key={r} value={r}>{r}</option>)}</select>
-        </div>
-        <div className="overflow-x-auto rounded-xl border border-neutral-200 shadow-sm">
-          <table className="w-full">
-            <thead><tr className="border-b bg-neutral-50"><th className="text-left py-2.5 px-3 text-xs font-semibold text-neutral-600 uppercase tracking-wider">Photo</th><th className="text-left py-2.5 px-3 text-xs font-semibold text-neutral-600 uppercase tracking-wider">Name</th><th className="text-left py-2.5 px-3 text-xs font-semibold text-neutral-600 uppercase tracking-wider">Relation</th><th className="text-left py-2.5 px-3 text-xs font-semibold text-neutral-600 uppercase tracking-wider">Phone</th><th className="text-left py-2.5 px-3 text-xs font-semibold text-neutral-600 uppercase tracking-wider">Approved</th><th className="text-left py-2.5 px-3 text-xs font-semibold text-neutral-600 uppercase tracking-wider">Action</th></tr></thead>
-            <tbody>
-              {filteredFamily.length===0 ? <tr><td colSpan={6} className="text-center py-6 text-sm text-neutral-500">No family for {selected?.firstName} - Add karo</td></tr> : filteredFamily.map(c=>(
-                <tr key={c.id} className="border-b hover:bg-neutral-50">
-                  <td className="py-2.5 px-3"><img src={c.photoUrl} alt="" className="w-9 h-9 rounded-full object-cover ring-2 ring-white shadow-sm" /></td>
-                  <td className="py-2.5 px-3 text-sm font-medium">{c.fullName}</td>
-                  <td className="py-2.5 px-3 text-sm"><span className="px-2.5 py-1 bg-neutral-100 rounded-full text-xs font-medium border">{c.relationship}</span></td>
-                  <td className="py-2.5 px-3 text-sm font-mono text-xs">{c.phoneNumber}</td>
-                  <td className="py-2.5 px-3"><button onClick={()=>toggleApproval(c.id)} className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${c.isApproved?'bg-success/10 text-success border-success/20 hover:bg-success hover:text-white':'bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-500 hover:text-white'}`} title="Click to toggle">{c.isApproved?'Approved':'Pending'} • click to toggle</button></td>
-                  <td className="py-2.5 px-3"><div className="flex gap-1"><button onClick={()=>setEditingFamily({...c})} className="px-2.5 py-1.5 bg-white border border-primary-600 text-primary-600 rounded-lg text-xs font-medium hover:bg-primary-600 hover:text-white">Edit</button><button onClick={()=>deleteFamily(c.id)} className="px-2.5 py-1.5 bg-white border border-error text-error rounded-lg text-xs font-medium hover:bg-error hover:text-white">Delete</button></div></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        {familyTotalPages>1 && <div className="flex items-center justify-between mt-4 px-1"><span className="text-xs text-neutral-500">Showing {(familyPage-1)*4+1}-{Math.min(familyPage*4, (selectedId? filteredFamily.length : 0))} of {selectedId? filteredFamily.length : 0}</span><div className="flex items-center gap-1"><button disabled={familyPage===1} onClick={()=>setFamilyPage(1)} className="px-2.5 py-1.5 border rounded-lg text-xs disabled:opacity-30 hover:bg-neutral-50">«</button><button disabled={familyPage===1} onClick={()=>setFamilyPage(p=>p-1)} className="px-3 py-1.5 border rounded-lg text-xs disabled:opacity-30 hover:bg-neutral-50">Prev</button><span className="px-3 py-1.5 bg-neutral-900 text-white rounded-lg text-xs font-medium">{familyPage} / {familyTotalPages}</span><button disabled={familyPage===familyTotalPages} onClick={()=>setFamilyPage(p=>p+1)} className="px-3 py-1.5 border rounded-lg text-xs disabled:opacity-30 hover:bg-neutral-50">Next</button><button disabled={familyPage===familyTotalPages} onClick={()=>setFamilyPage(familyTotalPages)} className="px-2.5 py-1.5 border rounded-lg text-xs disabled:opacity-30 hover:bg-neutral-50">»</button></div></div>}
-        </>
-        )}
-        {showAddFamily && (
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={()=>setShowAddFamily(false)}>
-            <div className="bg-white rounded-xl p-6 w-full max-w-md" onClick={e=>e.stopPropagation()}>
-              <h3 className="font-bold mb-4">Add Family Member</h3>
-              <input placeholder="Full Name" value={newFamily.fullName} onChange={e=>setNewFamily({...newFamily,fullName:e.target.value})} className="w-full mb-3 px-3 py-2 border rounded-lg" />
-              <input placeholder="Relationship" value={newFamily.relationship} onChange={e=>setNewFamily({...newFamily,relationship:e.target.value})} className="w-full mb-3 px-3 py-2 border rounded-lg" />
-              <input placeholder="Phone" value={newFamily.phoneNumber} onChange={e=>setNewFamily({...newFamily,phoneNumber:e.target.value})} className="w-full mb-3 px-3 py-2 border rounded-lg" />
-              <select value={newFamily.inmateId} onChange={e=>setNewFamily({...newFamily,inmateId:e.target.value})} className="w-full mb-3 px-3 py-2 border rounded-lg">
-                <option value="">{selectedId ? `Family for ${selected?.firstName} (${selectedId})` : 'Select Inmate'}</option>
-                {inmates.map(i=><option key={i.inmateId} value={i.inmateId}>{i.firstName} {i.lastName} ({i.inmateId})</option>)}
-              </select>
-              <div className="flex gap-2 justify-end">
-                <button onClick={()=>setShowAddFamily(false)} className="px-4 py-2 border rounded-lg">Cancel</button>
-                <button onClick={addFamily} className="px-4 py-2 bg-primary-600 text-white rounded-lg">Add</button>
-              </div>
-            </div>
-          </div>
-        )}
-      </Card>
-      </div>
 
       {/* Edit Prisoner Modal */}
       {editingInmate && (
