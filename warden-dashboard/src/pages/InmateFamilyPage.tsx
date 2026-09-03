@@ -59,14 +59,7 @@ export function InmateFamilyPage() {
   const filteredFamily = filteredFamilyBase.slice((familyPage-1)*4, familyPage*4);
   return (
     <div className="space-y-6">
-      <div><h1 className="text-3xl font-bold tracking-tight">Prisoner & Family</h1><p className="text-neutral-600">Side by side - select a prisoner to view family</p></div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card><div className="p-4 flex items-center gap-3"><div className="w-10 h-10 rounded-xl bg-primary-600 text-white flex items-center justify-center">👤</div><div><p className="text-2xl font-extrabold leading-none">{inmates.length}</p><p className="text-xs font-semibold text-neutral-600 uppercase">Prisoners</p></div></div></Card>
-        <Card><div className="p-4 flex items-center gap-3"><div className="w-10 h-10 rounded-xl bg-success text-white flex items-center justify-center">👨‍👩‍👧</div><div><p className="text-2xl font-extrabold leading-none">{contacts.length}</p><p className="text-xs font-semibold text-neutral-600 uppercase">Family Members</p></div></div></Card>
-        <Card><div className="p-4 flex items-center gap-3"><div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center">✓</div><div><p className="text-2xl font-extrabold leading-none">{contacts.filter(c=>c.isApproved).length}</p><p className="text-xs font-semibold text-neutral-600 uppercase">Approved</p></div></div></Card>
-        <Card><div className="p-4 flex items-center gap-3"><div className="w-10 h-10 rounded-xl bg-purple-600 text-white flex items-center justify-center">◎</div><div><p className="text-2xl font-extrabold leading-none">{selectedId? familyOfSelected.length : 0}</p><p className="text-xs font-semibold text-neutral-600 uppercase">Selected Family</p></div></div></Card>
-      </div>
+      <div><h1 className="text-3xl font-bold tracking-tight">Prisoner & Family</h1></div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Block 1 - All Prisoners - click to select - pro */}
