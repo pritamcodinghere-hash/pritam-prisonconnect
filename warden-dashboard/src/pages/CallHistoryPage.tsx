@@ -246,6 +246,36 @@ export function CallHistoryPage() {
           </div>
         )}
       </Card>
+
+      {(() => {
+        const failed = filtered.filter(c=>c.status==='failed');
+        if (failed.length===0) return null;
+        return (
+          <Card>
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-8 h-8 rounded-lg bg-error/10 flex items-center justify-center text-error"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>
+              <h2 className="text-lg font-bold text-neutral-900">Failed Calls</h2>
+              <span className="px-2 py-0.5 bg-error/10 text-error rounded-full text-xs font-medium">{failed.length}</span>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead><tr className="border-b border-neutral-200"><th className="text-left py-2 px-3 text-xs font-semibold text-neutral-600">Call ID</th><th className="text-left py-2 px-3 text-xs font-semibold text-neutral-600">Date</th><th className="text-left py-2 px-3 text-xs font-semibold text-neutral-600">Inmate</th><th className="text-left py-2 px-3 text-xs font-semibold text-neutral-600">Kiosk</th><th className="text-left py-2 px-3 text-xs font-semibold text-neutral-600">Reason</th></tr></thead>
+                <tbody>
+                  {failed.map(c=>(
+                    <tr key={c.callId} className="border-b border-neutral-100 hover:bg-red-50/50">
+                      <td className="py-2 px-3 text-xs font-mono">{c.callId}</td>
+                      <td className="py-2 px-3 text-xs">{formatDate(c.startTime)}</td>
+                      <td className="py-2 px-3 text-xs flex items-center gap-2"><img src={inmates[c.inmateId]?.photoUrl || 'https://i.pravatar.cc/100'} alt="" className="w-6 h-6 rounded-full" />{c.inmateId}</td>
+                      <td className="py-2 px-3 text-xs">{c.kioskId}</td>
+                      <td className="py-2 px-3 text-xs"><span className="px-2 py-0.5 bg-error/10 text-error rounded-full">Failed • {c.durationMinutes}m</span></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        );
+      })()}
       {playing && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={() => setPlaying(null)}>
           <div className="bg-white rounded-xl p-4 max-w-3xl w-full" onClick={e=>e.stopPropagation()}>
