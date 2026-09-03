@@ -11,6 +11,8 @@ export function InmateFamilyPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showAddInmate, setShowAddInmate] = useState(false);
   const [showAddFamily, setShowAddFamily] = useState(false);
+  const [searchPrisoner, setSearchPrisoner] = useState('');
+  const [searchFamily, setSearchFamily] = useState('');
   const [newInmate, setNewInmate] = useState({firstName:'',lastName:'',inmateId:'',facility:'Barrack A'});
   const [newFamily, setNewFamily] = useState({fullName:'',relationship:'',phoneNumber:'',inmateId:''});
 
@@ -41,30 +43,33 @@ export function InmateFamilyPage() {
 
   if(loading) return <Loading message="Loading..." />;
   const selected = inmates.find(i=>i.inmateId===selectedId);
+  const filteredPrisoners = inmates.filter(i=> !searchPrisoner || `${i.firstName} ${i.lastName} ${i.inmateId} ${i.facility}`.toLowerCase().includes(searchPrisoner.toLowerCase()));
   const familyOfSelected = selectedId ? contacts.filter(c=>c.inmateId===selectedId) : [];
+  const filteredFamily = familyOfSelected.filter(c=> !searchFamily || `${c.fullName} ${c.relationship} ${c.phoneNumber}`.toLowerCase().includes(searchFamily.toLowerCase()));
   return (
     <div className="space-y-6">
       <div><h1 className="text-3xl font-bold">Prisoner & Family</h1><p className="text-neutral-600">Side by side - Prisoner pe click karo, bagal me uski Family dikhegi</p></div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      {/* Block 1 - All Prisoners - click to select */}
+      {/* Block 1 - All Prisoners - click to select - pro */}
       <Card>
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-bold flex items-center gap-2"><span className="w-8 h-8 rounded-lg bg-primary-600/10 flex items-center justify-center">👤</span> All Prisoners ({inmates.length}) {selected && <span className="text-sm font-normal text-primary-600">• Selected: {selected.firstName}</span>}</h2>
-          <button onClick={()=>setShowAddInmate(true)} className="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm">+ Add Prisoner</button>
+          <h2 className="text-lg font-bold flex items-center gap-2"><span className="w-8 h-8 rounded-xl bg-primary-600 text-white flex items-center justify-center text-sm">👤</span> All Prisoners <span className="px-2 py-0.5 bg-neutral-100 rounded-full text-xs font-medium">{filteredPrisoners.length}/{inmates.length}</span> {selected && <span className="text-sm font-normal text-primary-600">• {selected.firstName} selected</span>}</h2>
+          <button onClick={()=>setShowAddInmate(true)} className="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm shadow-sm hover:bg-primary-700">+ Add Prisoner</button>
         </div>
-        <div className="overflow-x-auto">
+        <input value={searchPrisoner} onChange={e=>setSearchPrisoner(e.target.value)} placeholder="Search prisoner..." className="w-full mb-3 px-3 py-2 border-2 border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm" />
+        <div className="overflow-x-auto rounded-lg border border-neutral-100">
           <table className="w-full">
-            <thead><tr className="border-b bg-neutral-50"><th className="text-left py-2 px-3 text-sm">Photo</th><th className="text-left py-2 px-3 text-sm">ID</th><th className="text-left py-2 px-3 text-sm">Name</th><th className="text-left py-2 px-3 text-sm">Facility</th><th className="text-left py-2 px-3 text-sm">Status</th><th className="text-left py-2 px-3 text-sm">Action</th></tr></thead>
+            <thead><tr className="border-b bg-neutral-50"><th className="text-left py-2.5 px-3 text-xs font-semibold text-neutral-600 uppercase tracking-wider">Photo</th><th className="text-left py-2.5 px-3 text-xs font-semibold text-neutral-600 uppercase tracking-wider">ID</th><th className="text-left py-2.5 px-3 text-xs font-semibold text-neutral-600 uppercase tracking-wider">Name</th><th className="text-left py-2.5 px-3 text-xs font-semibold text-neutral-600 uppercase tracking-wider">Facility</th><th className="text-left py-2.5 px-3 text-xs font-semibold text-neutral-600 uppercase tracking-wider">Status</th><th className="text-left py-2.5 px-3 text-xs font-semibold text-neutral-600 uppercase tracking-wider">Action</th></tr></thead>
             <tbody>
-              {inmates.map(i=>(
-                <tr key={i.inmateId} onClick={()=>setSelectedId(i.inmateId)} className={`border-b hover:bg-neutral-50 cursor-pointer ${selectedId===i.inmateId?'bg-primary-50':''}`}>
-                  <td className="py-2 px-3"><img src={i.photoUrl} alt="" className="w-8 h-8 rounded-full" /></td>
-                  <td className="py-2 px-3 text-sm font-mono">{i.inmateId}</td>
-                  <td className="py-2 px-3 text-sm">{i.firstName} {i.lastName} {selectedId===i.inmateId && <span className="ml-2 text-xs text-primary-600">← selected</span>}</td>
-                  <td className="py-2 px-3 text-sm">{i.facility} • {i.cellBlock}</td>
-                  <td className="py-2 px-3"><span className="px-2 py-0.5 bg-success/10 text-success rounded-full text-xs">{i.status}</span></td>
-                  <td className="py-2 px-3" onClick={e=>e.stopPropagation()}><button onClick={()=>deleteInmate(i.inmateId)} className="px-3 py-1 bg-error text-white rounded text-xs">Delete</button></td>
+              {filteredPrisoners.map(i=>(
+                <tr key={i.inmateId} onClick={()=>setSelectedId(i.inmateId)} className={`border-b hover:bg-neutral-50 cursor-pointer transition-colors ${selectedId===i.inmateId?'bg-primary-50 ring-1 ring-primary-200':''}`}>
+                  <td className="py-2.5 px-3"><img src={i.photoUrl} alt="" className="w-9 h-9 rounded-full object-cover ring-2 ring-white shadow-sm" /></td>
+                  <td className="py-2.5 px-3 text-sm font-mono font-medium">{i.inmateId}</td>
+                  <td className="py-2.5 px-3 text-sm font-medium">{i.firstName} {i.lastName} {selectedId===i.inmateId && <span className="ml-2 text-xs text-primary-600 font-semibold">←</span>}</td>
+                  <td className="py-2.5 px-3 text-sm text-neutral-600">{i.facility} • {i.cellBlock} <span className={`ml-2 px-1.5 py-0.5 rounded text-xs ${i.securityLevel==='high'?'bg-error/10 text-error':i.securityLevel==='low'?'bg-success/10 text-success':'bg-amber-100 text-amber-700'}`}>{i.securityLevel}</span></td>
+                  <td className="py-2.5 px-3"><span className="px-2.5 py-1 bg-success/10 text-success rounded-full text-xs font-medium">{i.status}</span></td>
+                  <td className="py-2.5 px-3" onClick={e=>e.stopPropagation()}><button onClick={()=>deleteInmate(i.inmateId)} className="px-3 py-1.5 bg-white border border-error text-error rounded-lg text-xs font-medium hover:bg-error hover:text-white transition-colors">Delete</button></td>
                 </tr>
               ))}
             </tbody>
@@ -87,33 +92,35 @@ export function InmateFamilyPage() {
         )}
       </Card>
 
-      {/* Block 2 - Family of Selected Prisoner - side by side */}
+      {/* Block 2 - Family of Selected Prisoner - side by side - pro */}
       <Card>
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-bold flex items-center gap-2"><span className="w-8 h-8 rounded-lg bg-success/10 flex items-center justify-center">👨‍👩‍👧</span> {selected ? `Family of ${selected.firstName} ${selected.lastName} (${familyOfSelected.length})` : 'Family Members - Select a prisoner above'}</h2>
-          <button onClick={()=>setShowAddFamily(true)} disabled={!selectedId} className={`px-4 py-2 rounded-lg text-sm ${selectedId?'bg-primary-600 text-white':'bg-neutral-300 text-neutral-500 cursor-not-allowed'}`}>+ Add Family</button>
+          <h2 className="text-lg font-bold flex items-center gap-2"><span className="w-8 h-8 rounded-xl bg-success text-white flex items-center justify-center text-sm">👨‍👩‍👧</span> {selected ? `Family of ${selected.firstName} ${selected.lastName}` : 'Family Members'} <span className="px-2 py-0.5 bg-neutral-100 rounded-full text-xs font-medium">{selectedId? familyOfSelected.length : contacts.length}</span></h2>
+          <button onClick={()=>setShowAddFamily(true)} disabled={!selectedId} className={`px-4 py-2 rounded-lg text-sm shadow-sm ${selectedId?'bg-success text-white hover:bg-success-700':'bg-neutral-300 text-neutral-500 cursor-not-allowed'}`}>+ Add Family</button>
         </div>
         {!selectedId ? (
-          <div className="text-center py-8 text-neutral-500">Prisoner table me kisi row pe click karo - uski family yaha dikhegi</div>
+          <div className="text-center py-12 border-2 border-dashed border-neutral-200 rounded-xl"><p className="text-neutral-500">Prisoner table me kisi row pe click karo</p><p className="text-xs text-neutral-400 mt-1">uski family yaha side-by-side dikhegi</p></div>
         ) : (
-        <div className="overflow-x-auto">
+        <>
+        <input value={searchFamily} onChange={e=>setSearchFamily(e.target.value)} placeholder="Search family..." className="w-full mb-3 px-3 py-2 border-2 border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-success text-sm" />
+        <div className="overflow-x-auto rounded-lg border border-neutral-100">
           <table className="w-full">
-            <thead><tr className="border-b bg-neutral-50"><th className="text-left py-2 px-3 text-sm">Photo</th><th className="text-left py-2 px-3 text-sm">Name</th><th className="text-left py-2 px-3 text-sm">Relation</th><th className="text-left py-2 px-3 text-sm">Inmate</th><th className="text-left py-2 px-3 text-sm">Phone</th><th className="text-left py-2 px-3 text-sm">Approved</th><th className="text-left py-2 px-3 text-sm">Action</th></tr></thead>
+            <thead><tr className="border-b bg-neutral-50"><th className="text-left py-2.5 px-3 text-xs font-semibold text-neutral-600 uppercase tracking-wider">Photo</th><th className="text-left py-2.5 px-3 text-xs font-semibold text-neutral-600 uppercase tracking-wider">Name</th><th className="text-left py-2.5 px-3 text-xs font-semibold text-neutral-600 uppercase tracking-wider">Relation</th><th className="text-left py-2.5 px-3 text-xs font-semibold text-neutral-600 uppercase tracking-wider">Phone</th><th className="text-left py-2.5 px-3 text-xs font-semibold text-neutral-600 uppercase tracking-wider">Approved</th><th className="text-left py-2.5 px-3 text-xs font-semibold text-neutral-600 uppercase tracking-wider">Action</th></tr></thead>
             <tbody>
-              {familyOfSelected.length===0 ? <tr><td colSpan={7} className="text-center py-6 text-sm text-neutral-500">No family for {selected?.firstName}</td></tr> : familyOfSelected.map(c=>(
+              {(searchFamily? filteredFamily : familyOfSelected).length===0 ? <tr><td colSpan={6} className="text-center py-6 text-sm text-neutral-500">No family for {selected?.firstName} - Add karo</td></tr> : (searchFamily? filteredFamily : familyOfSelected).map(c=>(
                 <tr key={c.id} className="border-b hover:bg-neutral-50">
-                  <td className="py-2 px-3"><img src={c.photoUrl} alt="" className="w-8 h-8 rounded-full" /></td>
-                  <td className="py-2 px-3 text-sm">{c.fullName}</td>
-                  <td className="py-2 px-3 text-sm">{c.relationship}</td>
-                  <td className="py-2 px-3 text-sm font-mono">{c.inmateId}</td>
-                  <td className="py-2 px-3 text-sm">{c.phoneNumber}</td>
-                  <td className="py-2 px-3"><span className={`px-2 py-0.5 rounded-full text-xs ${c.isApproved?'bg-success/10 text-success':'bg-amber-100 text-amber-700'}`}>{c.isApproved?'Yes':'Pending'}</span></td>
-                  <td className="py-2 px-3"><button onClick={()=>deleteFamily(c.id)} className="px-3 py-1 bg-error text-white rounded text-xs">Delete</button></td>
+                  <td className="py-2.5 px-3"><img src={c.photoUrl} alt="" className="w-9 h-9 rounded-full object-cover ring-2 ring-white shadow-sm" /></td>
+                  <td className="py-2.5 px-3 text-sm font-medium">{c.fullName}</td>
+                  <td className="py-2.5 px-3 text-sm"><span className="px-2 py-1 bg-neutral-100 rounded-full text-xs">{c.relationship}</span></td>
+                  <td className="py-2.5 px-3 text-sm font-mono text-xs">{c.phoneNumber}</td>
+                  <td className="py-2.5 px-3"><span className={`px-2.5 py-1 rounded-full text-xs font-medium ${c.isApproved?'bg-success/10 text-success border border-success/20':'bg-amber-100 text-amber-700 border border-amber-200'}`}>{c.isApproved?'Approved':'Pending'}</span></td>
+                  <td className="py-2.5 px-3"><button onClick={()=>deleteFamily(c.id)} className="px-3 py-1.5 bg-white border border-error text-error rounded-lg text-xs font-medium hover:bg-error hover:text-white transition-colors">Delete</button></td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+        </>
         )}
         {showAddFamily && (
           <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={()=>setShowAddFamily(false)}>
