@@ -19,13 +19,15 @@ export function InmateFamilyPage() {
   const [newInmate, setNewInmate] = useState({firstName:'',lastName:'',inmateId:'',facility:'Barrack A', kioskId:''});
   const [newFamily, setNewFamily] = useState({fullName:'',relationship:'',phoneNumber:'',inmateId:''});
 
+  const dummyInmate1: Inmate = { inmateId:'INM-1021', firstName:'Rahul', lastName:'Kumar', prisonId:'PR-01', facility:'Barrack A', cellBlock:'B-1', status:'active', photoUrl:'https://i.pravatar.cc/100?img=10', securityLevel:'medium', sentenceDetails:'2 years' } as Inmate;
+  const dummyContact1: Contact = { id:'FAM-201', inmateId:'INM-1021', fullName:'Sunita Kumar', relationship:'Mother', phoneNumber:'9876543210', isApproved:true, photoUrl:'https://i.pravatar.cc/100?img=20', lastCallDate:new Date().toISOString(), nextScheduledCallDate:null };
   const load = useCallback(async()=>{
     try{
       const [im, co] = await Promise.all([wardenApi.getInmates().catch(()=>[] as Inmate[]), wardenApi.getContacts().catch(()=>[] as Contact[])]);
-      setInmates(im);
-      setContacts(co);
+      setInmates(im.length?im:[dummyInmate1]);
+      setContacts(co.length?co:[dummyContact1]);
     }catch{
-      // keep empty on error - backend will show empty
+      setInmates([dummyInmate1]); setContacts([dummyContact1]);
     }finally{ setLoading(false); }
   },[]);
   useEffect(()=>{load();},[load]);
