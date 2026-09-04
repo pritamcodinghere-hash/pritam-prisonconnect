@@ -132,7 +132,7 @@ export function InmateFamilyPage() {
       </Card>
 
       {showAddFamily && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={()=>{setShowAddFamily(false); setAddFamilyError('');}}>
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4" onClick={()=>{setShowAddFamily(false); setAddFamilyError('');}}>
           <div className="bg-white rounded-xl p-6 w-full max-w-md" onClick={e=>e.stopPropagation()}>
             <h3 className="font-bold mb-4">Add Family Members</h3>
             {addFamilyError && <p className="text-sm text-error bg-error/10 border border-error/20 rounded-lg px-3 py-2 mb-3">{addFamilyError}</p>}
