@@ -174,14 +174,14 @@ export function CallHistoryPage() {
 
 
       <Card>
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-4">
-          <input value={search} onChange={e=>{setSearch(e.target.value); setPage(1)}} placeholder="Search Call ID / Inmate" className="col-span-2 px-4 py-2 border-2 border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
+        <div className="grid grid-cols-1 md:grid-cols-7 gap-3 mb-4">
+          <input value={search} onChange={e=>{setSearch(e.target.value); setPage(1)}} placeholder="Search Call ID / Inmate" className="md:col-span-2 px-4 py-2 border-2 border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
           <select value={statusFilter} onChange={e=>{setStatusFilter(e.target.value); setPage(1)}} className="px-4 py-2 border-2 border-neutral-300 rounded-lg"><option value="all">All Status</option><option value="completed">Completed</option><option value="failed">Failed</option></select>
           <select value={typeFilter} onChange={e=>{setTypeFilter(e.target.value); setPage(1)}} className="px-4 py-2 border-2 border-neutral-300 rounded-lg"><option value="all">All Types</option><option value="video">Video</option><option value="audio">Audio</option></select>
           <select value={kioskFilter} onChange={e=>{setKioskFilter(e.target.value); setPage(1)}} className="px-4 py-2 border-2 border-neutral-300 rounded-lg"><option value="all">All Kiosks</option>{kiosks.map(k=><option key={k} value={k}>{k}</option>)}</select>
-          <div className="flex gap-2 col-span-2 md:col-span-1">
-            <div className="flex-1"><label className="text-xs text-neutral-500">From</label><input type="date" value={dateFrom} onChange={e=>{setDateFrom(e.target.value); setPage(1)}} className="w-full px-2 py-2 border-2 border-neutral-300 rounded-lg text-sm" /></div>
-            <div className="flex-1"><label className="text-xs text-neutral-500">To</label><input type="date" value={dateTo} onChange={e=>{setDateTo(e.target.value); setPage(1)}} className="w-full px-2 py-2 border-2 border-neutral-300 rounded-lg text-sm" /></div>
+          <div className="flex gap-2 md:col-span-2">
+            <div className="flex-1 min-w-0"><label className="text-xs text-neutral-500">From</label><input type="date" value={dateFrom} onChange={e=>{setDateFrom(e.target.value); setPage(1)}} className="w-full px-2 py-2 border-2 border-neutral-300 rounded-lg text-sm" /></div>
+            <div className="flex-1 min-w-0"><label className="text-xs text-neutral-500">To</label><input type="date" value={dateTo} onChange={e=>{setDateTo(e.target.value); setPage(1)}} className="w-full px-2 py-2 border-2 border-neutral-300 rounded-lg text-sm" /></div>
           </div>
         </div>
         {filtered.length === 0 ? (
