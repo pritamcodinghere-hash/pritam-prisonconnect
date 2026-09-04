@@ -38,7 +38,21 @@ export function InmateFamilyPage() {
   const updateFamily = async () => { if(!editingFamily) return; try{ await wardenApi.createContact(editingFamily.inmateId, editingFamily as any); }catch{} setContacts(s=> s.map(c=> c.id===editingFamily.id ? editingFamily : c)); setEditingFamily(null); };
   const toggleApproval = async (id:string)=> { const c=contacts.find(x=>x.id===id); if(!c) return; const upd={...c, isApproved:!c.isApproved}; try{ await wardenApi.createContact(upd.inmateId, upd as any); }catch{} setContacts(s=>s.map(x=> x.id===id ? upd : x)); };
   const addInmate = async ()=>{ if(!newInmate.inmateId||!newInmate.firstName||!newInmate.kioskId) return; const payload={ inmateId:newInmate.inmateId, firstName:newInmate.firstName, lastName:newInmate.lastName, prisonId:'PR-01', facility:newInmate.facility, cellBlock:'B-X', status:'active', photoUrl:'https://i.pravatar.cc/100', securityLevel:'medium', sentenceDetails:'', kioskId:newInmate.kioskId } as any; try{ const saved=await wardenApi.createInmate(payload); setInmates(s=>[...s, (saved||payload) as Inmate]); }catch{ setInmates(s=>[...s, payload as Inmate]); } setNewInmate({firstName:'',lastName:'',inmateId:'',facility:'Barrack A', kioskId:''}); setShowAddInmate(false); };
-  const addFamily = async ()=>{ if(!newFamily.fullName||!newFamily.phoneNumber) return; const targetId = newFamily.inmateId || selectedId || inmates[0]?.inmateId || 'INM-1021'; const payload={ fullName:newFamily.fullName, relationship:newFamily.relationship, phoneNumber:newFamily.phoneNumber, inmateId:targetId } as any; try{ const saved=await wardenApi.createContact(targetId, payload); setContacts(s=>[...s, (saved||{ id:`FAM-${Date.now()}`, ...payload, isApproved:false, photoUrl:'https://i.pravatar.cc/100', lastCallDate:new Date().toISOString(), nextScheduledCallDate:null } as Contact)]); }catch{ setContacts(s=>[...s,{ id:`FAM-${Date.now()}`, inmateId:targetId, fullName:newFamily.fullName, relationship:newFamily.relationship, phoneNumber:newFamily.phoneNumber, isApproved:false, photoUrl:'https://i.pravatar.cc/100', lastCallDate:new Date().toISOString(), nextScheduledCallDate:null } as Contact]); } setNewFamily({fullName:'',relationship:'',phoneNumber:'',inmateId:''}); setShowAddFamily(false); };
+  const [addFamilyError, setAddFamilyError] = useState('');
+  const addFamily = async ()=>{ 
+    if(!newFamily.fullName.trim()||!newFamily.phoneNumber.trim()){ setAddFamilyError('Full Name and Phone are required'); return; }
+    const targetId = newFamily.inmateId || selectedId || detailPrisoner?.inmateId || inmates[0]?.inmateId;
+    if(!targetId){ setAddFamilyError('Select a prisoner'); return; }
+    setAddFamilyError('');
+    const payload={ fullName:newFamily.fullName.trim(), relationship:newFamily.relationship.trim()||'Family', phoneNumber:newFamily.phoneNumber.trim(), inmateId:targetId } as any;
+    try{ const saved=await wardenApi.createContact(targetId, payload); setContacts(s=>[...s, (saved||{ id:`FAM-${Date.now()}`, ...payload, isApproved:false, photoUrl:'https://i.pravatar.cc/100', lastCallDate:new Date().toISOString(), nextScheduledCallDate:null } as Contact)]); }catch{ setContacts(s=>[...s,{ id:`FAM-${Date.now()}`, inmateId:targetId, fullName:payload.fullName, relationship:payload.relationship, phoneNumber:payload.phoneNumber, isApproved:false, photoUrl:'https://i.pravatar.cc/100', lastCallDate:new Date().toISOString(), nextScheduledCallDate:null } as Contact]); }
+    setNewFamily({fullName:'',relationship:'',phoneNumber:'',inmateId:''}); setShowAddFamily(false); setAddFamilyError('');
+    // ensure detail view shows
+    if(detailPrisoner && detailPrisoner.inmateId!==targetId){
+      const inmate = inmates.find(i=>i.inmateId===targetId);
+      if(inmate) setDetailPrisoner(inmate);
+    }
+  };
 
   const [prisonerPage, setPrisonerPage] = useState(1);
   const [familyPage, setFamilyPage] = useState(1);
@@ -116,6 +130,27 @@ export function InmateFamilyPage() {
           </div>
         )}
       </Card>
+
+      {showAddFamily && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={()=>{setShowAddFamily(false); setAddFamilyError('');}}>
+          <div className="bg-white rounded-xl p-6 w-full max-w-md" onClick={e=>e.stopPropagation()}>
+            <h3 className="font-bold mb-4">Add Family Members</h3>
+            {addFamilyError && <p className="text-sm text-error bg-error/10 border border-error/20 rounded-lg px-3 py-2 mb-3">{addFamilyError}</p>}
+            <input placeholder="Full Name *" value={newFamily.fullName} onChange={e=>setNewFamily({...newFamily,fullName:e.target.value})} className="w-full mb-3 px-3 py-2 border rounded-lg" />
+            <input placeholder="Relationship" value={newFamily.relationship} onChange={e=>setNewFamily({...newFamily,relationship:e.target.value})} className="w-full mb-3 px-3 py-2 border rounded-lg" />
+            <input placeholder="Phone *" value={newFamily.phoneNumber} onChange={e=>setNewFamily({...newFamily,phoneNumber:e.target.value})} className="w-full mb-3 px-3 py-2 border rounded-lg" />
+            <select value={newFamily.inmateId} onChange={e=>setNewFamily({...newFamily,inmateId:e.target.value})} className="w-full mb-3 px-3 py-2 border rounded-lg">
+              <option value="">Select Inmate *</option>
+              {inmates.map(i=><option key={i.inmateId} value={i.inmateId}>{i.firstName} {i.lastName} ({i.inmateId})</option>)}
+            </select>
+            <p className="text-xs text-neutral-500 mb-3">Will be added to: {newFamily.inmateId || selectedId || detailPrisoner?.inmateId || '— select above'}</p>
+            <div className="flex gap-2 justify-end">
+              <button onClick={()=>{setShowAddFamily(false); setAddFamilyError('');}} className="px-4 py-2 border rounded-lg">Cancel</button>
+              <button onClick={addFamily} className="px-4 py-2 bg-success text-white rounded-lg">Add</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Edit Prisoner Modal */}
       {editingInmate && (
