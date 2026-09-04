@@ -180,8 +180,8 @@ export function CallHistoryPage() {
           <select value={typeFilter} onChange={e=>{setTypeFilter(e.target.value); setPage(1)}} className="px-4 py-2 border-2 border-neutral-300 rounded-lg"><option value="all">All Types</option><option value="video">Video</option><option value="audio">Audio</option></select>
           <select value={kioskFilter} onChange={e=>{setKioskFilter(e.target.value); setPage(1)}} className="px-4 py-2 border-2 border-neutral-300 rounded-lg"><option value="all">All Kiosks</option>{kiosks.map(k=><option key={k} value={k}>{k}</option>)}</select>
           <div className="flex gap-2 col-span-2 md:col-span-1">
-            <input type="date" value={dateFrom} onChange={e=>{setDateFrom(e.target.value); setPage(1)}} className="flex-1 px-2 py-2 border-2 border-neutral-300 rounded-lg text-sm" />
-            <input type="date" value={dateTo} onChange={e=>{setDateTo(e.target.value); setPage(1)}} className="flex-1 px-2 py-2 border-2 border-neutral-300 rounded-lg text-sm" />
+            <div className="flex-1"><label className="text-xs text-neutral-500">From</label><input type="date" value={dateFrom} onChange={e=>{setDateFrom(e.target.value); setPage(1)}} className="w-full px-2 py-2 border-2 border-neutral-300 rounded-lg text-sm" /></div>
+            <div className="flex-1"><label className="text-xs text-neutral-500">To</label><input type="date" value={dateTo} onChange={e=>{setDateTo(e.target.value); setPage(1)}} className="w-full px-2 py-2 border-2 border-neutral-300 rounded-lg text-sm" /></div>
           </div>
         </div>
         {filtered.length === 0 ? (
