@@ -38,9 +38,7 @@ export function TrustAccountPage() {
     <div className="space-y-6">
       <div><h1 className="text-3xl font-bold tracking-tight">Trust Account</h1><p className="text-neutral-600">Professional wallet & refund center</p></div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card><div className="p-5 flex items-center gap-4"><div className="w-12 h-12 rounded-xl bg-primary-600/10 flex items-center justify-center text-primary-600">₹</div><div><p className="text-2xl font-extrabold leading-none">₹{totalBalance}</p><p className="text-xs font-semibold uppercase text-neutral-500">Total Balance</p></div></div></Card>
-        <Card><div className="p-5 flex items-center gap-4"><div className="w-12 h-12 rounded-xl bg-success/10 flex items-center justify-center text-success">↗</div><div><p className="text-2xl font-extrabold leading-none">₹{totalSpent}</p><p className="text-xs font-semibold uppercase text-neutral-500">Total Spent</p></div></div></Card>
+      <div className="grid grid-cols-2 gap-4">
         <Card><div className="p-5 flex items-center gap-4"><div className={`w-12 h-12 rounded-xl flex items-center justify-center ${lowBalance.length?'bg-error text-white':'bg-neutral-100 text-neutral-400'}`}>!</div><div><p className={`text-2xl font-extrabold leading-none ${lowBalance.length?'text-error':''}`}>{lowBalance.length}</p><p className="text-xs font-semibold uppercase text-neutral-500">Low Balance</p></div></div></Card>
         <Card><div className="p-5 flex items-center gap-4"><div className="w-12 h-12 rounded-xl bg-purple-600/10 flex items-center justify-center text-purple-600">↩</div><div><p className="text-2xl font-extrabold leading-none">{transactions.filter(t=>t.type==='refund').length}</p><p className="text-xs font-semibold uppercase text-neutral-500">Refunds</p></div></div></Card>
       </div>
