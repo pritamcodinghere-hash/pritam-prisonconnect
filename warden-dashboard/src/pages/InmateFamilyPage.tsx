@@ -19,15 +19,18 @@ export function InmateFamilyPage() {
   const [newInmate, setNewInmate] = useState({firstName:'',lastName:'',inmateId:'',facility:'Barrack A', kioskId:''});
   const [newFamily, setNewFamily] = useState({fullName:'',relationship:'',phoneNumber:'',inmateId:''});
 
-  const dummyInmate1: Inmate = { inmateId:'INM-1021', firstName:'Rahul', lastName:'Kumar', prisonId:'PR-01', facility:'Barrack A', cellBlock:'B-1', status:'active', photoUrl:'https://i.pravatar.cc/100?img=10', securityLevel:'medium', sentenceDetails:'2 years' } as Inmate;
-  const dummyContact1: Contact = { id:'FAM-201', inmateId:'INM-1021', fullName:'Sunita Kumar', relationship:'Mother', phoneNumber:'9876543210', isApproved:true, photoUrl:'https://i.pravatar.cc/100?img=20', lastCallDate:new Date().toISOString(), nextScheduledCallDate:null };
+  const [loadError, setLoadError] = useState<string|null>(null);
   const load = useCallback(async()=>{
     try{
-      const [im, co] = await Promise.all([wardenApi.getInmates().catch(()=>[] as Inmate[]), wardenApi.getContacts().catch(()=>[] as Contact[])]);
-      setInmates(im.length?im:[dummyInmate1]);
-      setContacts(co.length?co:[dummyContact1]);
-    }catch{
-      setInmates([dummyInmate1]); setContacts([dummyContact1]);
+      setLoadError(null);
+      const [im, co] = await Promise.all([wardenApi.getInmates(), wardenApi.getContacts()]);
+      setInmates(im ?? []);
+      setContacts(co ?? []);
+      if ((im ?? []).length===0) console.info('[InmateFamily] inmates backend returned empty');
+      if ((co ?? []).length===0) console.info('[InmateFamily] contacts backend returned empty');
+    }catch(e:any){
+      setLoadError(e?.response?.data?.error?.message || e?.message || 'Failed to load prisoners & family');
+      setInmates([]); setContacts([]);
     }finally{ setLoading(false); }
   },[]);
   useEffect(()=>{load();},[load]);
@@ -60,6 +63,7 @@ export function InmateFamilyPage() {
   const [relationFilter, setRelationFilter] = useState('all');
 
   if(loading) return <Loading message="Loading..." />;
+  if(loadError) return <Card><div className="text-center py-12"><p className="text-error mb-4">{loadError}</p><button onClick={()=>{setLoading(true); load();}} className="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm">Retry</button></div></Card>;
   const selected = inmates.find(i=>i.inmateId===selectedId);
   const facilities = Array.from(new Set(inmates.map(i=>i.facility)));
   const relations = Array.from(new Set(contacts.map(c=>c.relationship)));
@@ -87,7 +91,9 @@ export function InmateFamilyPage() {
           <table className="w-full">
             <thead><tr className="border-b bg-neutral-50"><th className="text-left py-2.5 px-3 text-xs font-semibold text-neutral-600 uppercase tracking-wider">Photo</th><th className="text-left py-2.5 px-3 text-xs font-semibold text-neutral-600 uppercase tracking-wider">ID</th><th className="text-left py-2.5 px-3 text-xs font-semibold text-neutral-600 uppercase tracking-wider">Name</th><th className="text-left py-2.5 px-3 text-xs font-semibold text-neutral-600 uppercase tracking-wider">Facility</th><th className="text-left py-2.5 px-3 text-xs font-semibold text-neutral-600 uppercase tracking-wider">Kiosk</th><th className="text-left py-2.5 px-3 text-xs font-semibold text-neutral-600 uppercase tracking-wider">Status</th><th className="text-left py-2.5 px-3 text-xs font-semibold text-neutral-600 uppercase tracking-wider">Action</th></tr></thead>
             <tbody>
-              {pagedPrisoners.map(i=>(
+              {pagedPrisoners.length===0 ? (
+                <tr><td colSpan={7} className="py-10 text-center text-sm text-neutral-500">{inmates.length===0 ? 'No prisoners — backend returned empty. Click + Add Prisoner to create one.' : `No prisoners match "${searchPrisoner}"`}</td></tr>
+              ) : pagedPrisoners.map(i=>(
                 <tr key={i.inmateId} onClick={()=>{setSelectedId(i.inmateId); setDetailPrisoner(i);}} className={`border-b hover:bg-neutral-50 cursor-pointer transition-colors ${selectedId===i.inmateId?'bg-primary-50 ring-1 ring-inset ring-primary-200':''}`}>
                   <td className="py-2.5 px-3"><img src={i.photoUrl} alt="" className="w-9 h-9 rounded-full object-cover ring-2 ring-white shadow-sm" /></td>
                   <td className="py-2.5 px-3 text-sm font-mono font-medium">{i.inmateId}</td>

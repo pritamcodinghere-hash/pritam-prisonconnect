@@ -1109,13 +1109,91 @@ app.get('/inmate/wallet/:id', requireAuth, asyncRoute(async (req, res) => {
 
 // ==================== WALLET ROUTES ====================
 
-app.get('/wallets', requireAuth, asyncRoute(async (req, res) => sendSuccess(res, await scopeList(req, await readDb('wallets.json')))));
+app.get('/wallets', requireAuth, asyncRoute(async (req, res) => {
+  const rawWallets = await scopeList(req, await readDb('wallets.json'));
+  // Enrich with ledger-derived balance + remaining (audio/video) from jail-account.
+  // Fallback to raw balance / pricing if derivation fails so trust account never shows 0 incorrectly.
+  let pricingRaw = {};
+  try { pricingRaw = await readDb('pricing.json'); } catch {}
+  const pricing = Array.isArray(pricingRaw) ? (pricingRaw[0] || {}) : (pricingRaw || {});
+  const videoRate = Number(pricing?.video?.ratePerMinute ?? pricing?.video?.price ?? 2.5) || 2.5;
+  const audioRate = Number(pricing?.audio?.ratePerMinute ?? pricing?.audio?.price ?? 1.0) || 1.0;
+  const enriched = await Promise.all(rawWallets.map(async (w) => {
+    try {
+      const st = await getStatement(w.inmateId);
+      if (st?.wallet) return st.wallet;
+    } catch {}
+    const bal = Number(w.balance) || 0;
+    const AUDIO_MIN = 10, VIDEO_MIN = 25;
+    return { ...w, remainingMinutes: Math.floor(bal / videoRate), remainingAudioMinutes: Math.floor(bal / audioRate), remainingVideoMinutes: Math.floor(bal / videoRate), audioCallEligible: bal >= AUDIO_MIN, videoCallEligible: bal >= VIDEO_MIN, callEligibility: bal < AUDIO_MIN ? 'none' : bal < VIDEO_MIN ? 'audio_only' : 'both', minAudioBalance: AUDIO_MIN, minVideoBalance: VIDEO_MIN };
+  }));
+  return sendSuccess(res, enriched);
+}));
 
 app.get('/wallets/:inmateId', requireAuth, asyncRoute(async (req, res) => {
+  const targetId = req.params.inmateId;
+  // Prefer ledger-derived statement (includes correct balance + remainingAudio/Video)
+  try {
+    const st = await getStatement(targetId);
+    if (st?.wallet && await inScopeOf(req, st.wallet)) return sendSuccess(res, st.wallet);
+    if (st?.wallet) return sendError(res, 'NOT_FOUND', 'Wallet not found', 404);
+  } catch {}
   const wallets = await readDb('wallets.json');
-  const wallet = wallets.find((w) => w.inmateId === req.params.inmateId);
+  const wallet = wallets.find((w) => w.inmateId === targetId);
   if (!wallet || !(await inScopeOf(req, wallet))) return sendError(res, 'NOT_FOUND', 'Wallet not found', 404);
-  return sendSuccess(res, wallet);
+  // Fallback enrich raw
+  let pricingRaw = {};
+  try { pricingRaw = await readDb('pricing.json'); } catch {}
+  const pricing = Array.isArray(pricingRaw) ? (pricingRaw[0] || {}) : (pricingRaw || {});
+  const videoRate = Number(pricing?.video?.ratePerMinute ?? pricing?.video?.price ?? 2.5) || 2.5;
+  const audioRate = Number(pricing?.audio?.ratePerMinute ?? pricing?.audio?.price ?? 1.0) || 1.0;
+  const bal = Number(wallet.balance) || 0;
+  const AUDIO_MIN = 10, VIDEO_MIN = 25;
+  const enriched = { ...wallet, remainingMinutes: Math.floor(bal / videoRate), remainingAudioMinutes: Math.floor(bal / audioRate), remainingVideoMinutes: Math.floor(bal / videoRate), audioCallEligible: bal >= AUDIO_MIN, videoCallEligible: bal >= VIDEO_MIN, callEligibility: bal < AUDIO_MIN ? 'none' : bal < VIDEO_MIN ? 'audio_only' : 'both', minAudioBalance: AUDIO_MIN, minVideoBalance: VIDEO_MIN };
+  return sendSuccess(res, enriched);
+}));
+
+// Dev seed for Trust Account verification — creates 2 wallets + transactions for current prison
+app.post('/dev/seed-trust', requireAuth, asyncRoute(async (req, res) => {
+  const jailId = jailScopeOf(req) || 'PRISON-001';
+  const inmates = await readDb('inmates.json');
+  const wallets = await readDb('wallets.json');
+  const transactions = await readDb('transactions.json');
+
+  const seedInmates = [
+    { inmateId:'INM-1021', firstName:'Rahul', lastName:'Kumar', prisonId:jailId, facility:'Barrack A', cellBlock:'B-1', status:'active', photoUrl:'https://i.pravatar.cc/100?img=10', securityLevel:'medium', sentenceDetails:'2 years', assignedKioskId:'KIOSK-01', pin: await hashSecret('1234') },
+    { inmateId:'INM-1023', firstName:'Amit', lastName:'Sharma', prisonId:jailId, facility:'Barrack B', cellBlock:'B-2', status:'active', photoUrl:'https://i.pravatar.cc/100?img=11', securityLevel:'low', sentenceDetails:'1 year', assignedKioskId:'KIOSK-01', pin: await hashSecret('1234') },
+  ];
+  for (const im of seedInmates) {
+    if (!inmates.find(x=>x.inmateId===im.inmateId)) inmates.push(im);
+  }
+  await updateDb('inmates.json', () => ({ data: inmates, result: null }));
+
+  const seedWallets = [
+    { walletId:'WAL-DEMO-01', inmateId:'INM-1021', balance:420, currency:'INR', status:'active' },
+    { walletId:'WAL-DEMO-02', inmateId:'INM-1023', balance:8, currency:'INR', status:'active' },
+  ];
+  for (const w of seedWallets) {
+    const idx = wallets.findIndex(x=>x.walletId===w.walletId);
+    if (idx===-1) wallets.push(w); else wallets[idx]= {...wallets[idx], ...w};
+  }
+  await updateDb('wallets.json', () => ({ data: wallets, result: null }));
+
+  const now = Date.now();
+  const seedTx = [
+    { transactionId:'TXN-DEMO-01', walletId:'WAL-DEMO-01', inmateId:'INM-1021', type:'recharge', amount:567, currency:'INR', status:'success', description:'Top-up', timestamp:new Date(now-86400000).toISOString() },
+    { transactionId:'TXN-DEMO-02', walletId:'WAL-DEMO-01', inmateId:'INM-1021', type:'charge', amount:60, currency:'INR', status:'success', description:'Call CALL-20240801-001 12min video @ ₹2.5/min', timestamp:new Date(now-86000000).toISOString(), callId:'CALL-20240801-001' },
+    { transactionId:'TXN-DEMO-03', walletId:'WAL-DEMO-01', inmateId:'INM-1021', type:'charge', amount:30, currency:'INR', status:'success', description:'Call CALL-20240802-002 30min audio @ ₹1/min', timestamp:new Date(now-259200000).toISOString(), callId:'CALL-20240802-002' },
+    { transactionId:'TXN-DEMO-04', walletId:'WAL-DEMO-01', inmateId:'INM-1021', type:'charge', amount:45, currency:'INR', status:'success', description:'Call CALL-20240804-005 18min video @ ₹2.5/min', timestamp:new Date(now-345600000).toISOString(), callId:'CALL-20240804-005' },
+    { transactionId:'TXN-DEMO-05', walletId:'WAL-DEMO-01', inmateId:'INM-1021', type:'charge', amount:12, currency:'INR', status:'success', description:'Call CALL-20240805-006 12min audio @ ₹1/min', timestamp:new Date(now-432000000).toISOString(), callId:'CALL-20240805-006' },
+    { transactionId:'TXN-DEMO-06', walletId:'WAL-DEMO-01', inmateId:'INM-1021', type:'refund', amount:24, currency:'INR', status:'success', description:'Refund — failed CALL-20240803-003', timestamp:new Date(now-172800000).toISOString(), callId:'CALL-20240803-003' },
+    { transactionId:'TXN-DEMO-07', walletId:'WAL-DEMO-02', inmateId:'INM-1023', type:'recharge', amount:8, currency:'INR', status:'success', description:'Top-up', timestamp:new Date(now-172800000).toISOString() },
+  ];
+  for (const t of seedTx) {
+    if (!transactions.find(x=>x.transactionId===t.transactionId)) transactions.push(t);
+  }
+  await updateDb('transactions.json', () => ({ data: transactions, result: null }));
+  return sendSuccess(res, { seededWallets: seedWallets.length, seededTx: seedTx.length });
 }));
 
 // ==================== CONTACT ROUTES ====================
@@ -1431,6 +1509,22 @@ app.post('/calls', requireAuth, asyncRoute(async (req, res) => {
       await finalizeCall(alreadyActive, startMs + maxMs);
     } else {
       return sendError(res, 'CALL_IN_PROGRESS', 'Inmate already has an active call', 409);
+    }
+  }
+
+  // Minimum balance guard — must match trust-account pricing rules
+  // audio: ₹10 min (₹1/min × 10), video: ₹25 min (₹2.5/min × 10) — prevents instant disconnect
+  {
+    const callType = callData.type === 'audio' ? 'audio' : 'video';
+    const minBalance = callType === 'audio' ? 10 : 25;
+    try {
+      const stmt = await getStatement(callData.inmateId);
+      const balance = stmt?.wallet?.balance ?? 0;
+      if (balance < minBalance) {
+        return sendError(res, 'INSUFFICIENT_BALANCE', `Insufficient balance for ${callType} call. Minimum ₹${minBalance} required, current balance ₹${balance}.`, 402);
+      }
+    } catch (e) {
+      console.warn('[calls] balance check failed, allowing call to proceed:', e?.message || String(e));
     }
   }
 

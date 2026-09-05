@@ -141,6 +141,27 @@ export interface Wallet {
   lastRechargeDate: string;
   totalSpent: number;
   remainingMinutes: number;
+  remainingAudioMinutes?: number;
+  remainingVideoMinutes?: number;
+  audioCallEligible?: boolean;
+  videoCallEligible?: boolean;
+  callEligibility?: 'none' | 'audio_only' | 'both';
+  minAudioBalance?: number;
+  minVideoBalance?: number;
+}
+
+export interface Transaction {
+  transactionId: string;
+  walletId: string;
+  inmateId: string;
+  type: string; // charge | recharge | refund | credit | debit
+  amount: number;
+  currency?: string;
+  status: string;
+  description?: string;
+  reason?: string;
+  timestamp: string;
+  callId?: string;
 }
 
 export interface Schedule {
@@ -340,6 +361,9 @@ export const wardenApi = {
 
   getWallet: (inmateId: string) =>
     cachedGet(`wallets:${inmateId}`, () => apiClient.get<ApiResponse<Wallet>>(`/wallets/${inmateId}`).then((r) => r.data?.data)),
+
+  getWalletStatement: (inmateId: string) =>
+    apiClient.get<ApiResponse<{ wallet: Wallet; transactions: Transaction[] }>>(`/inmate/wallet/${inmateId}`).then((r) => r.data?.data ?? { wallet: null as any, transactions: [] }),
 
   // Schedule
   getSchedule: () =>

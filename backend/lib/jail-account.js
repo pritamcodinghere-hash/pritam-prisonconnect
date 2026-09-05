@@ -76,6 +76,43 @@ function deriveSummary(transactions, wallet = {}) {
   };
 }
 
+async function getPricingRates() {
+  try {
+    const raw = await readDb('pricing.json');
+    // pricing may be singleton object {audio, video} or array-wrapped [{audio, video}]
+    const pricing = Array.isArray(raw) ? (raw[0] || {}) : (raw || {});
+    const videoRate = Number(pricing?.video?.ratePerMinute ?? pricing?.video?.price ?? 2.5);
+    const audioRate = Number(pricing?.audio?.ratePerMinute ?? pricing?.audio?.price ?? 1.0);
+    return {
+      videoRate: Number.isFinite(videoRate) && videoRate > 0 ? videoRate : 2.5,
+      audioRate: Number.isFinite(audioRate) && audioRate > 0 ? audioRate : 1.0,
+    };
+  } catch {
+    return { videoRate: 2.5, audioRate: 1.0 };
+  }
+}
+
+function computeRemainingMinutes(balance, rate) {
+  if (!Number.isFinite(balance) || balance <= 0) return 0;
+  if (!Number.isFinite(rate) || rate <= 0) return 0;
+  return Math.floor(balance / rate);
+}
+
+function computeRemaining(balance, audioRate, videoRate) {
+  const AUDIO_MIN_BALANCE = 10;
+  const VIDEO_MIN_BALANCE = 25;
+  return {
+    remainingMinutes: computeRemainingMinutes(balance, videoRate), // legacy: video
+    remainingAudioMinutes: computeRemainingMinutes(balance, audioRate),
+    remainingVideoMinutes: computeRemainingMinutes(balance, videoRate),
+    audioCallEligible: balance >= AUDIO_MIN_BALANCE,
+    videoCallEligible: balance >= VIDEO_MIN_BALANCE,
+    callEligibility: balance < AUDIO_MIN_BALANCE ? 'none' : balance < VIDEO_MIN_BALANCE ? 'audio_only' : 'both',
+    minAudioBalance: AUDIO_MIN_BALANCE,
+    minVideoBalance: VIDEO_MIN_BALANCE,
+  };
+}
+
 /** Try the external jail accounting API. Returns null when not configured/failing. */
 async function externalStatement(wallet) {
   if (!JAIL_ACCOUNT_API_URL) return null;
@@ -112,6 +149,9 @@ async function getStatement(id) {
   const external = await externalStatement(wallet);
   if (external && (external.wallet || external.balance != null) && Array.isArray(external.transactions)) {
     const summary = deriveSummary(external.transactions, external.wallet || wallet);
+    const { videoRate, audioRate } = await getPricingRates();
+    const remaining = computeRemaining(summary.balance, audioRate, videoRate);
+    Object.assign(summary, remaining);
     return {
       wallet: {
         walletId: wallet.walletId,
@@ -122,7 +162,14 @@ async function getStatement(id) {
         totalSpent: summary.totalSpent,
         lastRecharge: summary.lastRecharge,
         lastRechargeAmount: summary.lastRechargeAmount,
-        remainingMinutes: summary.remainingMinutes
+        remainingMinutes: summary.remainingMinutes,
+        remainingAudioMinutes: summary.remainingAudioMinutes,
+        remainingVideoMinutes: summary.remainingVideoMinutes,
+        audioCallEligible: summary.audioCallEligible,
+        videoCallEligible: summary.videoCallEligible,
+        callEligibility: summary.callEligibility,
+        minAudioBalance: summary.minAudioBalance,
+        minVideoBalance: summary.minVideoBalance
       },
       transactions: external.transactions
     };
@@ -130,6 +177,9 @@ async function getStatement(id) {
 
   const transactions = await internalTransactions(wallet);
   const summary = deriveSummary(transactions, wallet);
+  const { videoRate, audioRate } = await getPricingRates();
+  const remaining = computeRemaining(summary.balance, audioRate, videoRate);
+  Object.assign(summary, remaining);
   return {
     wallet: {
       walletId: wallet.walletId,
@@ -140,7 +190,14 @@ async function getStatement(id) {
       totalSpent: summary.totalSpent,
       lastRecharge: summary.lastRecharge,
       lastRechargeAmount: summary.lastRechargeAmount,
-      remainingMinutes: summary.remainingMinutes
+      remainingMinutes: summary.remainingMinutes,
+      remainingAudioMinutes: summary.remainingAudioMinutes,
+      remainingVideoMinutes: summary.remainingVideoMinutes,
+      audioCallEligible: summary.audioCallEligible,
+      videoCallEligible: summary.videoCallEligible,
+      callEligibility: summary.callEligibility,
+      minAudioBalance: summary.minAudioBalance,
+      minVideoBalance: summary.minVideoBalance
     },
     transactions
   };

@@ -29,28 +29,26 @@ export function CallHistoryPage() {
   const [viewMode, setViewMode] = useState<'table'|'timeline'>('table');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const pageSize = 5;
-  const dummyCall: CallHistoryItem = { callId:'CALL-20240801-001', roomId:'ROOM-01', inmateId:'INM-1021', contactId:'FAM-201', kioskId:'KIOSK-01', type:'video', status:'completed', startTime:new Date(Date.now()-86400000).toISOString(), endTime:new Date(Date.now()-86400000+12*60000).toISOString(), durationMinutes:12 };
-  const dummyRec: Recording = { recordingId:'REC-001', callId:dummyCall.callId, inmateId:dummyCall.inmateId, kioskId:dummyCall.kioskId, startTime:dummyCall.startTime, endTime:dummyCall.endTime, duration:720, size:45*1024*1024, url:'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4', encryption:'AES-256', retentionDays:30, status:'completed' };
-  const dummyInmate: Inmate = { inmateId:'INM-1021', firstName:'Rahul', lastName:'Kumar', prisonId:'PR-01', facility:'Barrack A', cellBlock:'B-1', status:'active', photoUrl:'https://i.pravatar.cc/100?img=10', securityLevel:'medium', sentenceDetails:'2 years' } as Inmate;
 
   const loadCalls = useCallback(async () => {
     try {
       setLoadError(null);
       const [callHistory, recs, inmateList] = await Promise.all([wardenApi.getCallHistory(), wardenApi.getRecordings(), wardenApi.getInmates().catch(()=>[] as Inmate[])]);
-      const finalCalls = callHistory.length ? callHistory : [dummyCall];
-      const finalRecs = recs.length ? recs : [dummyRec];
-      const finalInmates = inmateList.length ? inmateList : [dummyInmate];
-      setCalls(finalCalls);
+      setCalls(callHistory ?? []);
       const map: Record<string, Recording> = {};
-      finalRecs.forEach((r) => { map[r.callId] = r; });
+      (recs ?? []).forEach((r) => { map[r.callId] = r; });
       setRecordings(map);
       const imap: Record<string, Inmate> = {};
-      finalInmates.forEach(i=> imap[i.inmateId]=i);
+      (inmateList ?? []).forEach(i=> imap[i.inmateId]=i);
       setInmates(imap);
-    } catch (error) {
-      setCalls([dummyCall]);
-      setRecordings({[dummyRec.callId]:dummyRec});
-      setInmates({[dummyInmate.inmateId]:dummyInmate});
+      if ((callHistory ?? []).length===0) {
+        console.info('[CallHistory] backend returned empty — no dummy fallback');
+      }
+    } catch (error:any) {
+      setLoadError(error?.response?.data?.error?.message || error?.message || 'Failed to load call history');
+      setCalls([]);
+      setRecordings({});
+      setInmates({});
     } finally {
       setIsLoading(false);
     }
