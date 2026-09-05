@@ -38,14 +38,7 @@ export function TrustAccountPage() {
     <div className="space-y-6">
       <div><h1 className="text-3xl font-bold tracking-tight">Trust Account</h1><p className="text-neutral-600">Professional wallet & refund center</p></div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <Card><div className="p-5 flex items-center gap-4"><div className={`w-12 h-12 rounded-xl flex items-center justify-center ${lowBalance.length?'bg-error text-white':'bg-neutral-100 text-neutral-400'}`}>!</div><div><p className={`text-2xl font-extrabold leading-none ${lowBalance.length?'text-error':''}`}>{lowBalance.length}</p><p className="text-xs font-semibold uppercase text-neutral-500">Low Balance</p></div></div></Card>
-        <Card><div className="p-5 flex items-center gap-4"><div className="w-12 h-12 rounded-xl bg-purple-600/10 flex items-center justify-center text-purple-600">↩</div><div><p className="text-2xl font-extrabold leading-none">{transactions.filter(t=>t.type==='refund').length}</p><p className="text-xs font-semibold uppercase text-neutral-500">Refunds</p></div></div></Card>
-      </div>
 
-      {lowBalance.length>0 && (
-        <Card><div className="p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-center gap-3 shadow-sm"><span className="w-8 h-8 rounded-full bg-amber-500 text-white flex items-center justify-center animate-pulse">!</span><div><p className="font-bold text-amber-800">Low Balance Alert - {lowBalance.length} inmates</p><p className="text-sm text-amber-700">{lowBalance.map(w=>`${w.inmateId} (₹${w.balance})`).join(' • ')} • Top-up required</p></div></div></Card>
-      )}
 
       <Card>
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
@@ -74,26 +67,7 @@ export function TrustAccountPage() {
         </div>
       </Card>
 
-      <Card>
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="font-bold flex items-center gap-2 text-lg"><span className="w-9 h-9 rounded-xl bg-purple-600 text-white flex items-center justify-center shadow-sm">↩</span> Transaction History - Refund Log</h2>
-          <span className="px-3 py-1 bg-neutral-100 rounded-full text-xs font-medium">{transactions.length} txns</span>
-        </div>
-        <div className="space-y-3">
-          {transactions.map(t=>(
-            <div key={t.id} className="flex items-center justify-between p-4 border-2 border-neutral-100 rounded-xl hover:border-primary-200 hover:bg-primary-50/30 transition-colors">
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold shadow-sm ${t.type==='refund'?'bg-amber-500':t.type==='credit'?'bg-success':'bg-error'}`}>{t.type==='refund'?'↩':t.type==='credit'?'+':'−'}</div>
-                <div>
-                  <p className="text-sm font-semibold">{t.reason} <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-bold border ${t.type==='refund'?'bg-amber-100 text-amber-700 border-amber-200':t.type==='credit'?'bg-success/10 text-success border-success/20':'bg-error/10 text-error border-error/20'}`}>{t.type}</span></p>
-                  <p className="text-xs text-neutral-500 mt-0.5">{t.inmateId} • {new Date(t.date).toLocaleDateString('en-IN')} • {new Date(t.date).toLocaleTimeString('en-IN')}</p>
-                </div>
-              </div>
-              <p className={`text-lg font-extrabold ${t.type==='refund'?'text-amber-600':t.type==='credit'?'text-success':'text-error'}`}>{t.type==='refund'?'+':t.type==='credit'?'+':'-'}₹{t.amount}</p>
-            </div>
-          ))}
-        </div>
-      </Card>
+
     </div>
   );
 }
